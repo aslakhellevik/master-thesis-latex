@@ -1,0 +1,8 @@
+{
+    // Recommended extensions for LaTeX development
+    "recommendations": [
+        "james-yu.latex-workshop",
+        "streetsidesoftware.code-spell-checker",
+        "streetsidesoftware.code-spell-checker-british-english"
+    ]
+}

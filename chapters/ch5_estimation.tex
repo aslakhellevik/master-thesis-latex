@@ -1,0 +1,856 @@
+%% Chapter 5: Estimation of the Recursive CoMO Model
+
+\chapter{Estimation of the Recursive CoMO Model}
+\label{chap:estimation}
+In Chapter~\ref{chap:model} we introduced the recursive CoMO model as a way to explicitly model network effects. In this chapter, we develop estimation methods for this model. The derivations of this chapter are new for the recursive CoMO model, but rely on the standard tools of Sections~\ref{sec:bg:mle}--\ref{sec:bg:iv}.
+
+We continue working under the assumptions made in Section~\ref{sec:model:assumptions}. We thus assume the stability of both equations through Assumptions~\ref{ass:screen_stability} and~\ref{ass:wb_stability}, error independence and normality through Assumptions~\ref{ass:error_indep} and~\ref{ass:normality}, and network exogeneity through Assumption~\ref{ass:network_exog}. Most importantly, we treat the network adjacency matrix $\mat{G}$ as fixed and known.
+
+We develop maximum likelihood estimators for both the SMU and WB equations. The idea is to use change-of-variables to turn the equations into multivariate normal densities with a Jacobian correction term. These take a form that can be simplified into lower-dimensional computational problems through the method of profiling. We can then also develop analytical Hessians of the log-likelihoods, which provide standard errors for asymptotic inference that we can use for hypothesis testing.
+
+For the WB equation, we develop a two-stage least squares estimator by exploiting network structure, building on the arguments we made when showing identification in Section~\ref{sec:model:identification}. A two-stage least squares approach is not feasible for the SMU equation, and we discuss why. 
+
+As outlined in Section~\ref{sec:model:estimation_strategy}, both equations are estimated from observed data: the SMU equation uses $(\vect{s}, \mat{G})$, and the WB equation uses $(\vect{y}, \vect{s}, \mat{G})$. No estimated quantities from the SMU equation enter the WB estimation. We end the chapter with a comparison of the ML and 2SLS estimators, and hypothesis tests for the CoMO effect and network coefficients. In Chapter~\ref{chap:monte_carlo} we will validate the estimators through Monte Carlo simulations.
+
+%% Section 5.1: ML Estimation of the SMU Equation
+\section{ML Estimation of the SMU Equation}
+\label{sec:est:screen_ml}
+We begin with estimating the parameters of the SMU equation. We derive the likelihood function, concentrated likelihood, and analytical Hessian, and explain how to optimise in practice.
+
+\subsection{The Likelihood Function}
+
+For reference, we repeat the SMU equation~\eqref{eq:screen_matrix}:
+\[
+    \vect{s} = \beta_0 \vect{1} + \beta_1 \mat{G}\vect{s} + \vect{u}
+\]
+Writing $\As = \mat{I} - \beta_1\mat{G}$, this can be rearranged to:
+\begin{equation}
+    \As\vect{s} - \beta_0\vect{1} = \vect{u}, \quad \vect{u} \sim \N(\vect{0}, \sigma_u^2\mat{I})
+\end{equation}
+Since we know the distribution of $\vect{u}$, we can use the change-of-variables formula (Theorem~\ref{thm:change_of_variables}) to find the likelihood function of $\vect{s}$.
+
+First, the standard multivariate normal density of $\vect{u}$ is:
+\begin{equation}
+    f_{\vect{u}}(\vect{u}) = (2\pi\sigma_u^2)^{-n/2} \exp\left(-\frac{1}{2\sigma_u^2}\vect{u}^\top\vect{u}\right)
+\end{equation}
+
+The transformation $\vect{u} = \As\vect{s} - \beta_0\vect{1}$ has Jacobian $\frac{\partial \vect{u}}{\partial \vect{s}^\top} = \As$, so $\left|\det\!\left(\frac{\partial \vect{u}}{\partial \vect{s}^\top}\right)\right| = |\det(\As)|$. Thus, by Theorem~\ref{thm:change_of_variables}, $f_{\vect{s}}(\vect{s}) = f_{\vect{u}}(\As\vect{s} - \beta_0\vect{1}) \cdot |\det(\As)|$. Inserting $\As\vect{s} - \beta_0\vect{1}$ into $f_{\vect{u}}(\vect{u})$ and taking the logarithm yields the log-likelihood:
+\begin{equation}
+\label{eq:loglik_screen}
+    \ell_s(\beta_0, \beta_1, \sigma_u^2) = \log|\As| - \frac{n}{2}\log(2\pi)
+    - \frac{n}{2}\log(\sigma_u^2)
+    - \frac{1}{2\sigma_u^2}\|\As\vect{s} - \beta_0\vect{1}\|^2
+\end{equation}
+
+Here we have used $\vect{u}^\top\vect{u} = \|\vect{u}\|^2$. In the log-likelihood, $|\As|$ denotes $\det(\As)$. The absolute value coming from the change-of-variables formula can be dropped because, under Assumption~\ref{ass:screen_stability} ($|\beta_1| < 1$), $\det(\As) > 0$ by Proposition~\ref{prop:det_positive}.
+
+We note that the main difference from a standard regression likelihood comes through the Jacobian term $\log|\As| = \log|\mat{I} - \beta_1\mat{G}|$ that is included through the change-of-variables.
+
+\subsection{Concentrated Likelihood}
+
+To simplify the optimisation of the likelihood in~\eqref{eq:loglik_screen}, we follow the profile likelihood technique of Section~\ref{sec:bg:profile_likelihood}. We profile out both $\beta_0$ and $\sigma_u^2$ and thus reduce the computation to a one-dimensional optimisation of $\beta_1$.
+
+\subsubsection{Profile Likelihood for $\beta_0$}
+
+To profile out $\beta_0$ we take the derivative of $\ell_s$ with respect to $\beta_0$ and set this equal to zero:
+\begin{equation}
+    \frac{\partial \ell_s}{\partial \beta_0} =
+    \frac{1}{\sigma_u^2}\vect{1}^\top(\As\vect{s} - \beta_0\vect{1}) = 0
+\end{equation}
+Now, solving for $\beta_0$ yields the following estimate of $\beta_0$ in terms of $\beta_1$:
+\begin{equation}
+\label{eq:beta0_profile}
+    \hat\beta_0(\beta_1) = \frac{1}{n}\vect{1}^\top\As\vect{s}
+    = \frac{1}{n}\vect{1}^\top(\vect{s} - \beta_1\mat{G}\vect{s})
+    = \frac{1}{n}\sum_{i=1}^n (s_i - \beta_1\sbar_i)
+\end{equation}
+We note that this estimate is the sample mean of the transformed variable $\As\vect{s}$.
+
+\subsubsection{Profile Likelihood for $\sigma_u^2$}
+
+For $\sigma_u^2$ we similarly find $\partial \ell_s / \partial \sigma_u^2 = 0$:
+\begin{equation}
+    \frac{\partial \ell_s}{\partial \sigma_u^2} =
+    -\frac{n}{2\sigma_u^2} + \frac{1}{2\sigma_u^4}\|\As\vect{s} - \beta_0\vect{1}\|^2 = 0
+\end{equation}
+
+Now, solving for $\sigma_u^2$ and substituting $\hat\beta_0(\beta_1)$ for $\beta_0$, we get:
+\begin{equation}
+    \hat\sigma_u^2(\beta_1) = \frac{1}{n}\|\As\vect{s} - \hat\beta_0(\beta_1)\vect{1}\|^2
+    = \frac{\text{SSE}_s(\beta_1)}{n}
+\end{equation}
+
+Here, $\text{SSE}_s(\beta_1)$ denotes the residual sum of squares at $\beta_1$.
+
+\subsubsection{Concentrated Log-Likelihood}
+
+Now we can substitute both profile estimates back into~\eqref{eq:loglik_screen}, cancel terms, and get the concentrated log-likelihood:
+\begin{equation}
+\label{eq:concentrated_screen}
+    \ell_s^c(\beta_1) = \log|\mat{I} - \beta_1\mat{G}|
+    - \frac{n}{2}\log\left(\frac{\text{SSE}_s(\beta_1)}{n}\right) + \text{const.}
+\end{equation}
+
+Here we collected all constants in the final term as they do not matter for optimisation. We see that the maximum likelihood estimate for $\beta_1$ will be the one that best balances a large Jacobian determinant and a good fit in terms of low residual variance.
+
+\subsection{Optimisation}
+
+We define a short algorithm for optimisation of the concentrated likelihood~\eqref{eq:concentrated_screen}. Since the concentrated likelihood is a univariate function of $\beta_1$, we maximise over the stability region $|\beta_1| < 1$ (Assumption~\ref{ass:screen_stability}) using bounded optimisation. In practice, we minimise the negative concentrated log-likelihood, which is equivalent to maximising the log-likelihood. We then use the profile estimates to directly calculate $\hat\beta_0$ and $\hat\sigma_u^2$. Implementation details are reported in Appendix~\ref{app:code:recursive}.
+
+\begin{algorithm}[H]
+\caption[ML Estimation of SMU Equation]{ML Estimation of SMU Equation.}
+\label{alg:screen_ml}
+\begin{algorithmic}[1]
+\Require Data $\vect{s}$, network $\mat{G}$
+\State Define $f(\beta_1) = -\ell_s^c(\beta_1)$ \Comment{Negative concentrated log-likelihood}
+\State $\hat\beta_1 \gets \arg\min_{\beta_1 \in (-1, 1)} f(\beta_1)$ \Comment{Bounded optimisation}
+\State $\hat\beta_0 \gets \frac{1}{n}\vect{1}^\top(\mat{I} - \hat\beta_1\mat{G})\vect{s}$
+\State $\hat\sigma_u^2 \gets \frac{1}{n}\|(\mat{I} - \hat\beta_1\mat{G})\vect{s} - \hat\beta_0\vect{1}\|^2$
+\State \Return $(\hat\beta_0, \hat\beta_1, \hat\sigma_u^2)$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{The Analytical Hessian}
+\label{sec:est:screen_hessian}
+As explained in Section~\ref{sec:bg:mle}, asymptotic inference is based on the Hessian matrix of the log-likelihood. It provides standard errors used for both confidence intervals (see Chapter~\ref{chap:monte_carlo}) and hypothesis tests. In this section we derive the full $3 \times 3$ analytical Hessian for the log-likelihood of the SMU equation. We denote the parameter vector as $\thetavec_s = (\beta_0, \beta_1, \sigma_u^2)^\top$, and also define a shorthand for the residual vector:
+\begin{equation}
+    \vect{r}_s = \As\vect{s} - \beta_0\vect{1}
+\end{equation}
+
+In the derivations below, we apply two matrix calculus identities that are stated and proved in Section~\ref{sec:bg:change_of_variables}:
+\begin{enumerate}
+    \item \textbf{Derivative of log-determinant} (Lemma~\ref{lem:logdet_deriv}). For invertible $\mat{A}(\theta)$:
+    \begin{equation*}
+        \frac{\partial \log|\mat{A}|}{\partial \theta} = \tr\!\left[\mat{A}^{-1}\frac{\partial \mat{A}}{\partial \theta}\right]
+    \end{equation*}
+
+    \item \textbf{Derivative of matrix inverse} (Lemma~\ref{lem:matinv_deriv}). For invertible $\mat{A}(\theta)$:
+    \begin{equation*}
+        \frac{\partial \mat{A}^{-1}}{\partial \theta} = -\mat{A}^{-1}\frac{\partial \mat{A}}{\partial \theta}\mat{A}^{-1}
+    \end{equation*}
+\end{enumerate}
+
+For our purpose, with $\As = \mat{I} - \beta_1\mat{G}$, we have $\frac{\partial \As}{\partial \beta_1} = -\mat{G}$. Applying the identities to $\As$ yields:
+\begin{align}
+    \frac{\partial \log|\As|}{\partial \beta_1} &= \tr[\As^{-1}(-\mat{G})] = -\tr[\As^{-1}\mat{G}] \label{eq:logdet_screen_applied} \\
+    \frac{\partial \As^{-1}}{\partial \beta_1} &= -\As^{-1}(-\mat{G})\As^{-1} = \As^{-1}\mat{G}\As^{-1} \label{eq:matinv_screen_applied}
+\end{align}
+
+We will apply these results in our derivations below.
+
+\subsubsection{First Derivatives}
+
+We first derive the first-order derivatives of the log-likelihood~\eqref{eq:loglik_screen}, yielding the gradient (or score) vector.
+
+We start with $\beta_0$, which enters only through the quadratic term:
+\begin{equation}
+    \frac{\partial \ell_s}{\partial \beta_0}
+    = \frac{\partial}{\partial \beta_0} (-\frac{1}{2\sigma_u^2}\vect{r}_s^\top\vect{r}_s)
+\end{equation}
+
+$\frac{\partial \vect{r}_s}{\partial \beta_0} = -\vect{1}$, and we get:
+\begin{equation}
+    \frac{\partial \ell_s}{\partial \beta_0}
+    = -\frac{1}{2\sigma_u^2} \cdot 2\vect{r}_s^\top(-\vect{1})
+    = \frac{1}{\sigma_u^2}\vect{1}^\top\vect{r}_s
+\end{equation}
+
+We then look at $\beta_1$, which is present in both the Jacobian term $\log|\As|$ and the quadratic term. We apply~\eqref{eq:logdet_screen_applied} and $\frac{\partial \vect{r}_s}{\partial \beta_1} = -\mat{G}\vect{s}$, and get:
+\begin{align}
+    \frac{\partial \ell_s}{\partial \beta_1}
+    &= -\tr[\As^{-1}\mat{G}] - \frac{1}{2\sigma_u^2} \cdot 2\vect{r}_s^\top(-\mat{G}\vect{s}) \nonumber\\
+    &= -\tr[\As^{-1}\mat{G}] + \frac{1}{\sigma_u^2}\vect{r}_s^\top\mat{G}\vect{s}
+\end{align}
+
+Lastly, $\sigma_u^2$ is included in $-\frac{n}{2}\log(\sigma_u^2)$ and $-\frac{1}{2\sigma_u^2}\vect{r}_s^\top\vect{r}_s$, but not in the residual. Taking the derivative is straightforward, and we get:
+\begin{equation}
+    \frac{\partial \ell_s}{\partial \sigma_u^2}
+    = -\frac{n}{2\sigma_u^2} + \frac{\vect{r}_s^\top\vect{r}_s}{2\sigma_u^4}
+\end{equation}
+
+\subsubsection{Second Derivatives}
+
+Now we derive all six unique second derivatives of the log-likelihood~\eqref{eq:loglik_screen}, yielding the analytical Hessian matrix $\mat{H}^s$ for the SMU equation. As $\partial^2\ell/\partial\theta_i\partial\theta_j = \partial^2\ell/\partial\theta_j\partial\theta_i$, we only need to find the upper-triangular elements of the Hessian to derive the full matrix.
+
+\textbf{$H^s_{\beta_0,\beta_0}$:} Using $\frac{\partial \vect{r}_s}{\partial \beta_0} = -\vect{1}$, we get:
+\begin{equation}
+    H^s_{\beta_0,\beta_0} = \frac{\partial^2 \ell_s}{\partial \beta_0^2} = \frac{\partial}{\partial\beta_0} (\frac{1}{\sigma_u^2}\vect{1}^\top\vect{r}_s) = \frac{1}{\sigma_u^2}\vect{1}^\top(-\vect{1}) = -\frac{n}{\sigma_u^2}
+\end{equation}
+
+\textbf{$H^s_{\beta_0,\beta_1}$:} Using $\frac{\partial \vect{r}_s}{\partial \beta_1} = -\mat{G}\vect{s}$, we get:
+\begin{equation}
+    H^s_{\beta_0,\beta_1} = \frac{\partial^2 \ell_s}{\partial \beta_0 \partial \beta_1} = \frac{\partial}{\partial\beta_1} (\frac{1}{\sigma_u^2}\vect{1}^\top\vect{r}_s) = \frac{1}{\sigma_u^2}\vect{1}^\top(-\mat{G}\vect{s}) = -\frac{1}{\sigma_u^2}\vect{1}^\top\mat{G}\vect{s}
+\end{equation}
+
+\textbf{$H^s_{\beta_0,\sigma_u^2}$:} Straightforward differentiation with respect to $\sigma_u^2$ yields:
+\begin{equation}
+    H^s_{\beta_0,\sigma_u^2} = \frac{\partial^2 \ell_s}{\partial \beta_0 \partial \sigma_u^2} = \frac{\partial}{\partial\sigma_u^2} \!\left(\frac{1}{\sigma_u^2}\vect{1}^\top\vect{r}_s\right) = -\frac{1}{\sigma_u^4}\vect{1}^\top\vect{r}_s
+\end{equation}
+
+\textbf{$H^s_{\beta_1,\beta_1}$:} The calculations for this element are more involved. We need to differentiate each of the terms of $\frac{\partial \ell_s}{\partial \beta_1}$ with respect to $\beta_1$.
+
+For the trace term, we use~\eqref{eq:matinv_screen_applied} to get:
+\begin{align}
+    \frac{\partial}{\partial \beta_1}\bigl[-\tr[\As^{-1}\mat{G}]\bigr]
+    &= -\tr\!\left[\frac{\partial \As^{-1}}{\partial \beta_1}\mat{G}\right]
+    = -\tr[\As^{-1}\mat{G}\As^{-1}\mat{G}]
+    = -\tr[(\As^{-1}\mat{G})^2]
+\end{align}
+
+For the term with the residual, we use $\frac{\partial \vect{r}_s}{\partial \beta_1} = -\mat{G}\vect{s}$, and get:
+\begin{align}
+    \frac{\partial}{\partial \beta_1}\left[\frac{1}{\sigma_u^2}\vect{r}_s^\top\mat{G}\vect{s}\right]
+    = \frac{1}{\sigma_u^2}(-\mat{G}\vect{s})^\top\mat{G}\vect{s}
+    = -\frac{1}{\sigma_u^2}\vect{s}^\top\mat{G}^\top\mat{G}\vect{s}
+\end{align}
+
+Combining the results above, we get:
+\begin{equation}
+\label{eq:Hs_11}
+    H^s_{\beta_1,\beta_1} = \frac{\partial^2 \ell_s}{\partial \beta_1^2} = \frac{\partial}{\partial\beta_1} (-\tr[\As^{-1}\mat{G}] + \frac{1}{\sigma_u^2}\vect{r}_s^\top\mat{G}\vect{s}) = -\tr[(\As^{-1}\mat{G})^2] - \frac{1}{\sigma_u^2}\vect{s}^\top\mat{G}^\top\mat{G}\vect{s}
+\end{equation}
+
+\textbf{$H^s_{\beta_1,\sigma_u^2}$:} Here the trace term does not contribute, and we are left with a straightforward derivative:
+\begin{equation}
+    H^s_{\beta_1,\sigma_u^2} = \frac{\partial^2 \ell_s}{\partial \beta_1 \partial \sigma_u^2} = \frac{\partial}{\partial \sigma_u^2}\!\left[\frac{1}{\sigma_u^2}\vect{r}_s^\top\mat{G}\vect{s}\right] = -\frac{1}{\sigma_u^4}\vect{r}_s^\top\mat{G}\vect{s}
+\end{equation}
+
+\textbf{$H^s_{\sigma_u^2,\sigma_u^2}$:} The final term is also a straightforward calculation:
+\begin{equation}
+    H^s_{\sigma_u^2,\sigma_u^2} = \frac{\partial^2 \ell_s}{\partial (\sigma_u^2)^2} = \frac{\partial}{\partial \sigma_u^2} \!\left(-\frac{n}{2\sigma_u^2} + \frac{\vect{r}_s^\top\vect{r}_s}{2\sigma_u^4}\right) = \frac{n}{2\sigma_u^4} - \frac{\vect{r}_s^\top\vect{r}_s}{\sigma_u^6}
+\end{equation}
+
+\subsubsection{Full Hessian Matrix}
+
+We collect all the elements from the derivations above, and write the full Hessian in block form:
+\begin{equation}
+\label{eq:screen_hessian_block}
+    \mat{H}^s = \begin{pmatrix}
+        -\frac{n}{\sigma_u^2} & -\frac{\vect{1}^\top\mat{G}\vect{s}}{\sigma_u^2} & -\frac{\vect{1}^\top\vect{r}_s}{\sigma_u^4} \\[6pt]
+        -\frac{\vect{1}^\top\mat{G}\vect{s}}{\sigma_u^2} & -\tr[(\As^{-1}\mat{G})^2] - \frac{\vect{s}^\top\mat{G}^\top\mat{G}\vect{s}}{\sigma_u^2} & -\frac{\vect{r}_s^\top\mat{G}\vect{s}}{\sigma_u^4} \\[6pt]
+        -\frac{\vect{1}^\top\vect{r}_s}{\sigma_u^4} & -\frac{\vect{r}_s^\top\mat{G}\vect{s}}{\sigma_u^4} & \frac{n}{2\sigma_u^4} - \frac{\vect{r}_s^\top\vect{r}_s}{\sigma_u^6}
+    \end{pmatrix}
+\end{equation}
+
+As we will see when deriving the Hessian for the WB equation in Section~\ref{sec:est:wb_hessian}, there is a structural similarity in how the spatial autoregressive parameter ($\beta_1$ or $\gamma_3$) introduces the trace term $-\tr[(\mat{A}^{-1}\mat{G})^2]$ from the Jacobian.
+
+\subsubsection{Standard Errors}
+
+Leaning on the theory in Section~\ref{sec:bg:mle} we can use the derived analytical Hessian to compute the standard errors of our estimators. From~\eqref{eq:mle_se}, the observed information matrix is $\hat{\mathcal{I}}_{n,s}(\hat{\thetavec}_s) = -\mat{H}^s(\hat{\thetavec}_s)$, where $\hat{\thetavec}_s$ are our estimated parameters. We then also get an estimate for the standard error of each parameter $j$ in $\hat{\thetavec}_s$ as:
+\begin{equation}
+    \widehat{\text{SE}}(\hat\theta_{s,j}) = \sqrt{[\hat{\mathcal{I}}_{n,s}(\hat{\thetavec}_s)^{-1}]_{jj}}
+\end{equation}
+
+When $\hat{\beta}_0$ and $\hat{\sigma}_u^2$ attain their profile values at the MLE, the residual satisfies $\vect{1}^\top\vect{r}_s = 0$ and $\vect{r}_s^\top\vect{r}_s = n\hat{\sigma}_u^2$. This is due to the first-order condition for $\beta_0$ ($\partial \ell_s / \partial \beta_0 = 0$) making the residuals sum to zero, and the first-order condition for $\sigma_u^2$ yielding $\hat{\sigma}_u^2 = \frac{1}{n}\vect{r}_s^\top\vect{r}_s$. If we apply these simplifications to the information matrix (or Hessian), some of the off-diagonal elements that contain $\vect{r}_s$ disappear or get simplified, which is convenient for numerical computation of the information matrix.
+
+%% Section 5.2: Why 2SLS Fails for the SMU Equation
+\section{Why 2SLS Fails for the SMU Equation}
+\label{sec:est:screen_2sls}
+For the SMU equation:
+\begin{equation}
+    s_i = \beta_0 + \beta_1\sbar_i + u_i
+\end{equation}
+we cannot apply 2SLS for estimation. This is because the only exogenous regressor is a constant, which does not provide enough variation for identification. For the \textcite{Bramoulle2009} (Proposition~\ref{prop:bramoulle}) identification strategy, 2SLS uses instruments that are constructed from powers of $\mat{G}$ applied to exogenous variables.
+
+When we only have the constant available as an exogenous variable, this leads to the following set of candidate instruments:
+\begin{equation}
+    \mat{Z} = [\vect{1}, \mat{G}\vect{1}, \mat{G}^2\vect{1}, \ldots]
+\end{equation}
+
+However, this leads to a problem: as $\mat{G}$ is row-normalised, each row will, by Definition~\ref{def:row_normalised}, sum to one, and $\mat{G}\vect{1} = \vect{1}$. Repeatedly applying this gives:
+\begin{equation}
+    \mat{G}^k\vect{1} = \vect{1} \quad \text{for all } k \geq 1
+\end{equation}
+
+which shows that all candidate instruments collapse to the same constant vector, providing no additional variation for $\beta_1$. No matter how many powers of $\mat{G}$ are included, the instrument matrix $\mat{Z}$ has rank one, and 2SLS does not work.
+
+If one wanted to use 2SLS for the SMU equation, one would need to include additional exogenous covariates $\mat{X}$. These could, for example, be age, gender, or other individual measures. In that case, $\mat{G}^2\mat{X}$, $\mat{G}^3\mat{X}$, etc.\ would be valid excluded instruments that could provide identification for $\beta_1$ through the network structure. For our purposes, we simplify the SMU equation by not requiring the inclusion of such covariates, and thus use ML estimation for the SMU equation. Instead of relying on excluded instruments, our ML estimation relies on the distributional assumption (Assumption~\ref{ass:normality}) to provide identifying variation, because different values of $\beta_1$ lead to different covariance structures in the distribution of $\vect{s}$, which the likelihood function can capture.
+
+%% Section 5.3: ML Estimation of the WB Equation
+\section{ML Estimation of the WB Equation}
+\label{sec:est:wb_ml}
+This section develops estimators for the parameters of the WB equation in a similar fashion to the development for SMU in Section~\ref{sec:est:screen_ml}. We derive the likelihood function, concentrated likelihood, and analytical Hessian, and explain how to optimise in practice.
+
+\subsection{The Likelihood Function}
+
+For reference, we repeat the WB equation~\eqref{eq:wellbeing_matrix}:
+\[
+    \vect{y} = \mat{X}\gammavec + \gamma_3\mat{G}\vect{y} + \vect{\varepsilon}
+\]
+
+Using the conditional distribution~\eqref{eq:wellbeing_conditional_dist} from Section~\ref{sec:model:wellbeing}, we rearrange to obtain
+\begin{equation}
+    \Ay\vect{y} - \mat{X}\gammavec = \vect{\varepsilon}, \quad \vect{\varepsilon} \sim \N(\vect{0}, \sigma_\varepsilon^2\mat{I})
+\end{equation}
+where $\Ay = \mat{I} - \gamma_3\mat{G}$, $\mat{X} = [\vect{1}, \vect{s}, \vect{c}]$, and $\gammavec = (\gamma_0, \gamma_1, \gamma_2)^\top$. In the rest of this section, all distributional statements and likelihoods will be conditional on $\vect{s}$ (and hence also on $\vect{c}$). To improve readability, we do not include the conditioning bar in the notation, but note that the conditioning is present.
+
+As the functional form is essentially the same, the change-of-variables argument used for the SMU equation (Theorem~\ref{thm:change_of_variables}) applies in the same way, and we can directly write down the log-likelihood as:
+\begin{align}
+\label{eq:loglik_wb}
+    \ell_y(\gamma_0, \gamma_1, \gamma_2, \gamma_3, \sigma_\varepsilon^2)
+    &= \log|\Ay| - \frac{n}{2}\log(2\pi) - \frac{n}{2}\log(\sigma_\varepsilon^2) \nonumber\\
+    &\quad - \frac{1}{2\sigma_\varepsilon^2}\|\Ay\vect{y} - \mat{X}\gammavec\|^2
+\end{align}
+
+Here $\log|\Ay|$ denotes the log-determinant. The absolute value from the change-of-variables formula can be dropped because, under Assumption~\ref{ass:wb_stability} ($|\gamma_3| < 1$), $\det(\Ay) > 0$ by Proposition~\ref{prop:det_positive}.
+
+Having a conditional form of the likelihood is necessary for our estimation procedure. Since $\vect{s}$ is observed, we condition on it directly. The recursive CoMO model structure, together with the error independence assumption (Assumption~\ref{ass:error_indep}), ensures that observed $\vect{s}$ is exogenous in the WB equation (as argued in Section~\ref{sec:model:estimation_strategy}). Conditioning on observed $\vect{s}$ also implies that the CoMO term $\vect{c} = \max(\vect{0}, \mat{G}\vect{s} - \vect{s})$ is fixed, which avoids complications from the non-linearity of the max operator.
+
+\subsection{Concentrated Likelihood}
+
+To simplify the optimisation of the likelihood in~\eqref{eq:loglik_wb} we can, as with the SMU equation, profile out linear parameters. In the WB case, we can profile out all parameters but $\gamma_3$, which reduces the ML computation to a one-dimensional optimisation.
+
+\subsubsection{Profile Likelihood for $\gammavec$}
+
+We can find the profile likelihood for the three parameters $\gamma_0$, $\gamma_1$, and $\gamma_2$ at the same time through profiling out the complete $\gammavec$. To do this we take the derivative of $\ell_y$ with respect to $\gammavec$ and set this equal to zero:
+\begin{equation}
+    \frac{\partial \ell_y}{\partial \gammavec} = \frac{1}{\sigma_\varepsilon^2}\mat{X}^\top(\Ay\vect{y} - \mat{X}\gammavec) = \vect{0}
+\end{equation}
+
+Solving for $\gammavec$, we get the following equation for $\gammavec$ in terms of $\gamma_3$:
+
+\begin{equation}
+\label{eq:gamma_profile}
+    \hat{\gammavec}(\gamma_3) = (\mat{X}^\top\mat{X})^{-1}\mat{X}^\top\Ay\vect{y}
+\end{equation}
+We notice that this is the OLS estimator applied to the transformed variable $\Ay\vect{y}$ regressed on $\mat{X}$. Thus, when $\gamma_3$ is fixed, we can obtain the linear parameters by standard least squares.
+
+\subsubsection{Profile Likelihood for $\sigma_\varepsilon^2$}
+
+We now take the derivative of $\ell_y$ with respect to $\sigma_\varepsilon^2$ and set this equal to zero:
+
+\begin{equation}
+    \frac{\partial \ell_y}{\partial \sigma_\varepsilon^2} =
+    -\frac{n}{2\sigma_\varepsilon^2} + \frac{1}{2\sigma_\varepsilon^4}\|\Ay\vect{y} - \mat{X}\gammavec\|^2 = 0
+\end{equation}
+
+Solving this for $\sigma_\varepsilon^2$ and substituting in $\hat{\gammavec}(\gamma_3)$ for $\gammavec$, we get:
+
+\begin{equation}
+    \hat\sigma_\varepsilon^2(\gamma_3) =
+    \frac{1}{n}\|\Ay\vect{y} - \mat{X}\hat{\gammavec}(\gamma_3)\|^2
+    = \frac{\text{SSE}_y(\gamma_3)}{n}
+\end{equation}
+
+Here, $\text{SSE}_y(\gamma_3)$ denotes the residual sum of squares at $\gamma_3$.
+
+\subsubsection{Concentrated Log-Likelihood}
+
+We insert the profile estimates found above into~\eqref{eq:loglik_wb}, cancel terms where possible, collect the constant terms, and get the concentrated log-likelihood for the WB equation:
+\begin{equation}
+\label{eq:concentrated_wb}
+    \ell_y^c(\gamma_3) = \log|\mat{I} - \gamma_3\mat{G}|
+    - \frac{n}{2}\log\left(\frac{\text{SSE}_y(\gamma_3)}{n}\right) + \text{const.}
+\end{equation}
+
+This likelihood has a similar form to the concentrated likelihood for SMU in equation~\eqref{eq:concentrated_screen}. We again have a balance between a Jacobian log-determinant term and a goodness-of-fit term based on residuals.
+
+\subsection{Optimisation}
+As for the SMU equation in Section~\ref{sec:est:screen_ml}, we provide an algorithm for the ML estimation of the WB equation. This requires both data in the form of $(\vect{y}, \vect{s})$ and the observed network $\mat{G}$. Using the concentrated likelihood~\eqref{eq:concentrated_wb}, we first perform a bounded maximisation over $\gamma_3 \in (-1, 1)$, and then use profile estimates to directly calculate the other parameters.
+
+\begin{algorithm}[H]
+\caption[ML Estimation of WB Equation]{ML Estimation of WB Equation.}
+\label{alg:wb_ml}
+\begin{algorithmic}[1]
+\Require Data $(\vect{y}, \vect{s})$, network $\mat{G}$
+\State Compute $\vect{c} = \max(\vect{0}, \mat{G}\vect{s} - \vect{s})$ \Comment{CoMO term}
+\State Form $\mat{X} = [\vect{1}, \vect{s}, \vect{c}]$
+\State Define $f(\gamma_3) = -\ell_y^c(\gamma_3)$ \Comment{Negative concentrated log-likelihood}
+\State $\hat\gamma_3 \gets \arg\min_{\gamma_3 \in (-1, 1)} f(\gamma_3)$ \Comment{Bounded optimisation}
+\State $\hat{\gammavec} \gets (\mat{X}^\top\mat{X})^{-1}\mat{X}^\top
+    (\mat{I} - \hat\gamma_3\mat{G})\vect{y}$ \Comment{Profile estimates via OLS}
+\State $\hat\sigma_\varepsilon^2 \gets \frac{1}{n}\|(\mat{I} - \hat\gamma_3\mat{G})\vect{y}
+    - \mat{X}\hat{\gammavec}\|^2$
+\State \Return $(\hat\gamma_0, \hat\gamma_1, \hat\gamma_2, \hat\gamma_3,
+    \hat\sigma_\varepsilon^2)$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{The Analytical Hessian}
+\label{sec:est:wb_hessian}
+We now derive the Hessian matrix of the log-likelihood to be used for asymptotic inference. Using the same approach as with the SMU Hessian in Section~\ref{sec:est:screen_hessian}, we derive all elements of the full $5 \times 5$ WB Hessian. For this derivation we use the same matrix calculus identities as before (Lemmas~\ref{lem:logdet_deriv} and~\ref{lem:matinv_deriv}). Applied to $\Ay = \mat{I} - \gamma_3\mat{G}$, these now become:
+\begin{align}
+    \frac{\partial \log|\Ay|}{\partial \gamma_3} &= -\tr[\Ay^{-1}\mat{G}] \label{eq:logdet_wb_applied} \\
+    \frac{\partial \Ay^{-1}}{\partial \gamma_3} &= \Ay^{-1}\mat{G}\Ay^{-1} \label{eq:matinv_wb_applied}
+\end{align}
+
+We again define the full parameter vector $\thetavec_y = (\gamma_0, \gamma_1, \gamma_2, \gamma_3, \sigma_\varepsilon^2)^\top$
+and the residual:
+\begin{equation}
+    \vect{r} = \Ay\vect{y} - \mat{X}\gammavec
+\end{equation}
+where $\mat{X} = [\vect{1}, \vect{s}, \vect{c}]$ and $\gammavec = (\gamma_0, \gamma_1, \gamma_2)^\top$. To simplify calculations we denote the columns of $\mat{X}$ by $\vect{x}_0 = \vect{1}$, $\vect{x}_1 = \vect{s}$, and $\vect{x}_2 = \vect{c}$.
+
+\subsubsection{First Derivatives}
+
+We first derive the first-order derivatives of the log-likelihood~\eqref{eq:loglik_wb}, yielding the gradient (or score) vector.
+
+We start with the derivatives with respect to $\gamma_0$, $\gamma_1$, and $\gamma_2$, which all have a similar form where only the quadratic term contributes. For $k = 0, 1, 2$, we have $\frac{\partial \vect{r}}{\partial \gamma_k} = -\vect{x}_k$, yielding:
+
+\begin{align}
+    \frac{\partial \ell_y}{\partial \gamma_k} = \frac{\partial}{\partial \gamma_k} (-\frac{1}{2\sigma_\varepsilon^2}\vect{r}^\top\vect{r}) = -\frac{1}{2\sigma_\varepsilon^2} \cdot 2\vect{r}^\top(-\vect{x}_k) = \frac{1}{\sigma_\varepsilon^2}\vect{x}_k^\top\vect{r}
+\end{align}
+
+We write out the expressions explicitly for each $\gamma_k$:
+\begin{align}
+    \frac{\partial \ell_y}{\partial \gamma_0} &=
+    \frac{1}{\sigma_\varepsilon^2}\vect{1}^\top\vect{r} \label{eq:score_g0}\\
+    \frac{\partial \ell_y}{\partial \gamma_1} &=
+    \frac{1}{\sigma_\varepsilon^2}\vect{s}^\top\vect{r} \\
+    \frac{\partial \ell_y}{\partial \gamma_2} &=
+    \frac{1}{\sigma_\varepsilon^2}\vect{c}^\top\vect{r}
+\end{align}
+
+Next, we derive the derivative with respect to $\gamma_3$. Here, both the Jacobian term $\log|\Ay|$ and the quadratic term contribute. For the Jacobian term, we use~\eqref{eq:logdet_wb_applied}, and for the quadratic term we have $\frac{\partial \vect{r}}{\partial \gamma_3} = -\mat{G}\vect{y}$. Using this, we get:
+\begin{align}
+    \frac{\partial \ell_y}{\partial \gamma_3}
+    &= -\tr[\Ay^{-1}\mat{G}] - \frac{1}{2\sigma_\varepsilon^2} \cdot 2\vect{r}^\top(-\mat{G}\vect{y}) \nonumber\\
+    &= -\tr[\Ay^{-1}\mat{G}] + \frac{1}{\sigma_\varepsilon^2}\vect{r}^\top\mat{G}\vect{y} \label{eq:score_g3}
+\end{align}
+
+Lastly we obtain the derivative with respect to $\sigma_\varepsilon^2$, which is included in both $-\frac{n}{2}\log\sigma_\varepsilon^2$ and $-\frac{1}{2\sigma_\varepsilon^2}\vect{r}^\top\vect{r}$. Taking the derivative is straightforward, and we get:
+\begin{equation}
+\label{eq:score_sigma}
+    \frac{\partial \ell_y}{\partial \sigma_\varepsilon^2}
+    = -\frac{n}{2\sigma_\varepsilon^2} + \frac{\vect{r}^\top\vect{r}}{2\sigma_\varepsilon^4}
+\end{equation}
+
+\subsubsection{Second Derivatives}
+
+With five parameters in the log-likelihood~\eqref{eq:loglik_wb}, we need to derive 15 unique second derivatives to get the analytical WB Hessian matrix $\mat{H}^y$. We organise the derivation by block structure for clarity. We separate $\mat{H}^y$ into the following structure:
+
+\begin{equation}
+\label{eq:hessian_block}
+    \mat{H}^y = \begin{pmatrix}
+        \mat{H}^y_{XX} & \mat{H}^y_{X\gamma_3} & \mat{H}^y_{X\sigma_\varepsilon^2} \\
+        (\mat{H}^y_{X\gamma_3})^\top & H^y_{\gamma_3,\gamma_3} & H^y_{\gamma_3,\sigma_\varepsilon^2} \\
+        (\mat{H}^y_{X\sigma_\varepsilon^2})^\top & H^y_{\gamma_3,\sigma_\varepsilon^2} & H^y_{\sigma_\varepsilon^2,\sigma_\varepsilon^2}
+    \end{pmatrix}
+\end{equation}
+
+Here, $\mat{H}^y_{XX}$ contains the second derivatives of the linear parameters ($\gamma_0, \gamma_1, \gamma_2$), $\mat{H}^y_{X\gamma_3}$ and $\mat{H}^y_{X\sigma_\varepsilon^2}$ contain the cross-derivatives of the linear parameters with $\gamma_3$ and $\sigma_\varepsilon^2$, respectively, and the bottom-right $2 \times 2$ block contains the remaining three unique second derivatives. We derive the second derivatives for each of these elements.
+
+\textbf{We begin with the linear parameter block}, $\mat{H}^y_{XX}$.
+
+From the first derivatives, we had that $\frac{\partial \ell_y}{\partial \gamma_j} = \frac{1}{\sigma_\varepsilon^2}\vect{x}_j^\top\vect{r}$. Now, differentiating this with respect to $\gamma_k$, and using (like before) $\frac{\partial \vect{r}}{\partial \gamma_k} = -\vect{x}_k$, we get:
+\begin{equation}
+    H^y_{\gamma_j,\gamma_k} = \frac{1}{\sigma_\varepsilon^2}\vect{x}_j^\top(-\vect{x}_k) = -\frac{1}{\sigma_\varepsilon^2}\vect{x}_j^\top\vect{x}_k
+\end{equation}
+
+For $j = 0, 1, 2$ and $k = 0, 1, 2$, this gives all the elements of the $3 \times 3$ block $\mat{H}^y_{XX}$. In matrix form, we can write this as:
+\begin{equation}
+    \mat{H}^y_{XX} = -\frac{1}{\sigma_\varepsilon^2}\mat{X}^\top\mat{X}
+\end{equation}
+
+We also note down the six unique second-order derivatives explicitly:
+\begin{align}
+    H^y_{\gamma_0,\gamma_0} &= -\frac{n}{\sigma_\varepsilon^2}, \qquad
+    H^y_{\gamma_0,\gamma_1} = -\frac{\vect{1}^\top\vect{s}}{\sigma_\varepsilon^2}, \qquad
+    H^y_{\gamma_0,\gamma_2} = -\frac{\vect{1}^\top\vect{c}}{\sigma_\varepsilon^2} \\[4pt]
+    H^y_{\gamma_1,\gamma_1} &= -\frac{\vect{s}^\top\vect{s}}{\sigma_\varepsilon^2}, \qquad
+    H^y_{\gamma_1,\gamma_2} = -\frac{\vect{s}^\top\vect{c}}{\sigma_\varepsilon^2}, \qquad
+    H^y_{\gamma_2,\gamma_2} = -\frac{\vect{c}^\top\vect{c}}{\sigma_\varepsilon^2}
+\end{align}
+
+\textbf{Next we derive the cross-derivatives of the linear parameters with $\gamma_3$}.
+
+We again differentiate $\frac{\partial \ell_y}{\partial \gamma_j} = \frac{1}{\sigma_\varepsilon^2}\vect{x}_j^\top\vect{r}$, this time with respect to $\gamma_3$. Using $\frac{\partial \vect{r}}{\partial \gamma_3} = -\mat{G}\vect{y}$, we get:
+\begin{equation}
+    H^y_{\gamma_j,\gamma_3} = \frac{1}{\sigma_\varepsilon^2}\vect{x}_j^\top(-\mat{G}\vect{y}) = -\frac{1}{\sigma_\varepsilon^2}\vect{x}_j^\top\mat{G}\vect{y}
+\end{equation}
+
+For $j = 0, 1, 2$, this gives the $3 \times 1$ block $\mat{H}^y_{X\gamma_3}$. In matrix form:
+\begin{equation}
+    \mat{H}^y_{X\gamma_3} = -\frac{1}{\sigma_\varepsilon^2}\mat{X}^\top\mat{G}\vect{y}
+\end{equation}
+Again we also write down the explicit second-order derivatives: $H^y_{\gamma_0,\gamma_3} = -\frac{\vect{1}^\top\mat{G}\vect{y}}{\sigma_\varepsilon^2}$, \; $H^y_{\gamma_1,\gamma_3} = -\frac{\vect{s}^\top\mat{G}\vect{y}}{\sigma_\varepsilon^2}$, \; $H^y_{\gamma_2,\gamma_3} = -\frac{\vect{c}^\top\mat{G}\vect{y}}{\sigma_\varepsilon^2}$.
+
+\textbf{Now we move on to the cross-derivatives of the linear parameters with $\sigma_\varepsilon^2$}.
+
+Differentiating $\frac{\partial \ell_y}{\partial \gamma_j} = \frac{1}{\sigma_\varepsilon^2}\vect{x}_j^\top\vect{r}$ with respect to $\sigma_\varepsilon^2$, we get:
+\begin{equation}
+    H^y_{\gamma_j,\sigma_\varepsilon^2} = \frac{\partial}{\partial \sigma_\varepsilon^2}\!\left(\frac{1}{\sigma_\varepsilon^2}\vect{x}_j^\top\vect{r}\right) = -\frac{1}{\sigma_\varepsilon^4}\vect{x}_j^\top\vect{r}
+\end{equation}
+
+For $j = 0, 1, 2$, this gives the $3 \times 1$ block $\mat{H}^y_{X\sigma_\varepsilon^2}$. In matrix form:
+\begin{equation}
+    \mat{H}^y_{X\sigma_\varepsilon^2} = -\frac{1}{\sigma_\varepsilon^4}\mat{X}^\top\vect{r}
+\end{equation}
+
+The explicit elements are: $H^y_{\gamma_0,\sigma_\varepsilon^2} = -\frac{\vect{1}^\top\vect{r}}{\sigma_\varepsilon^4}$, \; $H^y_{\gamma_1,\sigma_\varepsilon^2} = -\frac{\vect{s}^\top\vect{r}}{\sigma_\varepsilon^4}$, \; $H^y_{\gamma_2,\sigma_\varepsilon^2} = -\frac{\vect{c}^\top\vect{r}}{\sigma_\varepsilon^4}$.
+
+\textbf{Lastly, we derive the three remaining second derivatives: $H^y_{\gamma_3,\gamma_3}$, $H^y_{\gamma_3,\sigma_\varepsilon^2}$, and $H^y_{\sigma_\varepsilon^2,\sigma_\varepsilon^2}$}.
+
+We start with $H^y_{\gamma_3,\gamma_3}$, which is the most complex element. For this element, we have to differentiate both terms of $\frac{\partial \ell_y}{\partial \gamma_3}$ with respect to $\gamma_3$.
+
+For the trace term we apply~\eqref{eq:matinv_wb_applied} to get:
+\begin{align}
+    \frac{\partial}{\partial \gamma_3}\bigl[-\tr[\Ay^{-1}\mat{G}]\bigr]
+    &= -\tr\!\left[\frac{\partial \Ay^{-1}}{\partial \gamma_3}\mat{G}\right]
+    = -\tr[\Ay^{-1}\mat{G}\Ay^{-1}\mat{G}]
+    = -\tr[(\Ay^{-1}\mat{G})^2]
+\end{align}
+
+For the residual term, as $\frac{\partial \vect{r}}{\partial \gamma_3} = -\mat{G}\vect{y}$, we get:
+\begin{align}
+    \frac{\partial}{\partial \gamma_3}\left[\frac{1}{\sigma_\varepsilon^2}\vect{r}^\top\mat{G}\vect{y}\right]
+    = \frac{1}{\sigma_\varepsilon^2}(-\mat{G}\vect{y})^\top\mat{G}\vect{y}
+    = -\frac{1}{\sigma_\varepsilon^2}\vect{y}^\top\mat{G}^\top\mat{G}\vect{y}
+\end{align}
+
+We combine the two derivations above to get the final element:
+\begin{equation}
+\label{eq:Hg3g3}
+    H^y_{\gamma_3,\gamma_3} = -\tr[(\Ay^{-1}\mat{G})^2]
+    - \frac{1}{\sigma_\varepsilon^2}\vect{y}^\top\mat{G}^\top\mat{G}\vect{y}
+\end{equation}
+
+The next element is $H^y_{\gamma_3,\sigma_\varepsilon^2}$. Here we take the derivative of $\frac{\partial \ell_y}{\partial \gamma_3}$ with respect to $\sigma_\varepsilon^2$. The trace term vanishes, and so we are left with the contribution from the residual term:
+\begin{equation}
+    H^y_{\gamma_3,\sigma_\varepsilon^2} = \frac{\partial}{\partial \sigma_\varepsilon^2}\!\left[\frac{1}{\sigma_\varepsilon^2}\vect{r}^\top\mat{G}\vect{y}\right] = -\frac{1}{\sigma_\varepsilon^4}\vect{r}^\top\mat{G}\vect{y}
+\end{equation}
+
+The final element is $H^y_{\sigma_\varepsilon^2,\sigma_\varepsilon^2}$. Straightforward differentiation of $\frac{\partial \ell_y}{\partial \sigma_\varepsilon^2} = -\frac{n}{2\sigma_\varepsilon^2} + \frac{\vect{r}^\top\vect{r}}{2\sigma_\varepsilon^4}$ with respect to $\sigma_\varepsilon^2$ yields:
+\begin{equation}
+    H^y_{\sigma_\varepsilon^2,\sigma_\varepsilon^2} = \frac{\partial}{\partial \sigma_\varepsilon^2}\!\left(-\frac{n}{2\sigma_\varepsilon^2} + \frac{\vect{r}^\top\vect{r}}{2\sigma_\varepsilon^4}\right) =
+    \frac{n}{2\sigma_\varepsilon^4} - \frac{\vect{r}^\top\vect{r}}{\sigma_\varepsilon^6}
+\end{equation}
+
+We thus have all the unique elements of the WB Hessian.
+
+\subsubsection{Full Hessian Matrix}
+
+Collecting together all the unique elements derived above we can write down the full $5 \times 5$ Hessian matrix for the WB equation. With the previous parameter ordering of $(\gamma_0, \gamma_1, \gamma_2, \gamma_3, \sigma_\varepsilon^2)$, we have:
+\begin{equation}
+\label{eq:wb_hessian_full}
+    \mat{H}^y = \begin{pmatrix}
+        -\dfrac{n}{\sigma_\varepsilon^2}
+        & -\dfrac{\vect{1}^\top\vect{s}}{\sigma_\varepsilon^2}
+        & -\dfrac{\vect{1}^\top\vect{c}}{\sigma_\varepsilon^2}
+        & -\dfrac{\vect{1}^\top\mat{G}\vect{y}}{\sigma_\varepsilon^2}
+        & -\dfrac{\vect{1}^\top\vect{r}}{\sigma_\varepsilon^4}
+        \\[10pt]
+        -\dfrac{\vect{1}^\top\vect{s}}{\sigma_\varepsilon^2}
+        & -\dfrac{\vect{s}^\top\vect{s}}{\sigma_\varepsilon^2}
+        & -\dfrac{\vect{s}^\top\vect{c}}{\sigma_\varepsilon^2}
+        & -\dfrac{\vect{s}^\top\mat{G}\vect{y}}{\sigma_\varepsilon^2}
+        & -\dfrac{\vect{s}^\top\vect{r}}{\sigma_\varepsilon^4}
+        \\[10pt]
+        -\dfrac{\vect{1}^\top\vect{c}}{\sigma_\varepsilon^2}
+        & -\dfrac{\vect{s}^\top\vect{c}}{\sigma_\varepsilon^2}
+        & -\dfrac{\vect{c}^\top\vect{c}}{\sigma_\varepsilon^2}
+        & -\dfrac{\vect{c}^\top\mat{G}\vect{y}}{\sigma_\varepsilon^2}
+        & -\dfrac{\vect{c}^\top\vect{r}}{\sigma_\varepsilon^4}
+        \\[10pt]
+        -\dfrac{\vect{1}^\top\mat{G}\vect{y}}{\sigma_\varepsilon^2}
+        & -\dfrac{\vect{s}^\top\mat{G}\vect{y}}{\sigma_\varepsilon^2}
+        & -\dfrac{\vect{c}^\top\mat{G}\vect{y}}{\sigma_\varepsilon^2}
+        & -\tr[(\Ay^{-1}\mat{G})^2] - \dfrac{\vect{y}^\top\mat{G}^\top\mat{G}\vect{y}}{\sigma_\varepsilon^2}
+        & -\dfrac{\vect{r}^\top\mat{G}\vect{y}}{\sigma_\varepsilon^4}
+        \\[10pt]
+        -\dfrac{\vect{1}^\top\vect{r}}{\sigma_\varepsilon^4}
+        & -\dfrac{\vect{s}^\top\vect{r}}{\sigma_\varepsilon^4}
+        & -\dfrac{\vect{c}^\top\vect{r}}{\sigma_\varepsilon^4}
+        & -\dfrac{\vect{r}^\top\mat{G}\vect{y}}{\sigma_\varepsilon^4}
+        & \dfrac{n}{2\sigma_\varepsilon^4} - \dfrac{\vect{r}^\top\vect{r}}{\sigma_\varepsilon^6}
+    \end{pmatrix}
+\end{equation}
+
+The structure of this matrix is similar to that of the $3 \times 3$ SMU Hessian~\eqref{eq:screen_hessian_block}. The upper-left $3 \times 3$ block $\mat{H}^y_{XX} = -\frac{1}{\sigma_\varepsilon^2}\mat{X}^\top\mat{X}$ corresponds to the $-\frac{n}{\sigma_u^2}$ term in the SMU Hessian. The WB Hessian's $\gamma_3$ row and column are similar to SMU's $\beta_1$ row and column, with trace terms on the diagonal stemming from the Jacobians of the change-of-variables transformations. There is also a similar algebraic structure to the rows and columns of the error parameters $\sigma_\varepsilon^2$ and $\sigma_u^2$.
+
+\subsubsection{Standard Errors}
+
+As with the SMU Hessian, the observed information matrix based on the WB Hessian is $\hat{\mathcal{I}}_{n,y}(\hat{\thetavec}_y) = -\mat{H}^y(\hat{\thetavec}_y)$, where $\hat{\thetavec}_y$ are our estimated parameters. From this we can calculate the standard error of each parameter $j$ in $\hat{\thetavec}_y$ as:
+\begin{equation}
+\label{eq:se_formula}
+    \widehat{\text{SE}}(\hat\theta_{y,j}) = \sqrt{[\hat{\mathcal{I}}_{n,y}(\hat{\thetavec}_y)^{-1}]_{jj}}
+\end{equation}
+
+The general ML theory for spatial autoregressive models \parencite[Thm.~3.2, p.~1906]{Lee2004} presented in Section~\ref{sec:bg:mle} guarantees the asymptotic validity of these standard errors. Under certain regularity conditions (see discussion in Section~\ref{sec:est:regularity}), we also have the general central-limit-theorem result:
+\begin{equation}
+    \sqrt{n}(\hat{\thetavec}_y - \thetavec_{y,0}) \dto \N(\vect{0}, \mathcal{I}_y(\thetavec_{y,0})^{-1})
+\end{equation}
+With asymptotic normality, we are justified in using the standard errors of~\eqref{eq:se_formula} for both hypothesis tests and confidence intervals, which we will do in Chapter~\ref{chap:monte_carlo}.
+
+\subsubsection{Recovering $\sigma$ from $\hat\sigma^2$}
+
+We note that the model parametrisation in terms of ($\sigma_u^2$, $\sigma_\varepsilon^2$) means that using formula~\eqref{eq:se_formula} gives standard errors for $\hat\sigma^2$, and not for $\hat\sigma$. To find an estimate and standard error for $\sigma = \sqrt{\sigma^2}$ we can apply the delta method (Theorem~\ref{thm:delta_method}).
+
+To apply the method we let $g(\sigma^2) = \sqrt{\sigma^2}$, which has the derivative $g'(\sigma^2) = 1/(2\sigma)$. Using this, we get:
+\begin{equation}
+\label{eq:delta_method_sigma}
+    \hat\sigma = \sqrt{\hat\sigma^2}, \qquad
+    \widehat{\text{SE}}(\hat\sigma) = \frac{1}{2\hat\sigma} \cdot \widehat{\text{SE}}(\hat\sigma^2)
+\end{equation}
+
+
+\subsubsection{Numerical Verification of the Hessian}
+
+Hessians can be approximated numerically. To ensure that the analytical Hessian we have derived is correct, and that standard errors and inference based on it can be trusted, we therefore perform a numerical verification of the Hessian in Chapter~\ref{chap:monte_carlo}. To do this, we apply a finite-difference approximation based on the centred finite-difference scheme for second-order derivatives \parencite[Eq.~(1.13), p.~8]{LeVeque2007}, extended to mixed partial derivatives using a four-point scheme. This scheme approximates the Hessian as:
+\begin{multline}
+    \hat{H}_{ij}^{y,\text{num}} = \frac{1}{4h^2}\bigl[\ell(\thetavec_y + h\vect{e}_i + h\vect{e}_j) - \ell(\thetavec_y + h\vect{e}_i - h\vect{e}_j) \\
+    - \ell(\thetavec_y - h\vect{e}_i + h\vect{e}_j) + \ell(\thetavec_y - h\vect{e}_i - h\vect{e}_j)\bigr]
+\end{multline}
+
+Here, $\ell$ is the log-likelihood function, $\thetavec_y$ is the vector of parameters at which the Hessian is evaluated, $\vect{e}_i$ is the $i$-th standard basis vector, and $h > 0$ is a small step size (we use $h = 10^{-5}$). The scheme works by perturbing two parameters at the same time in all four possible sign combinations. Then, taking the scaled difference approximates each Hessian entry $\partial^2 \ell / \partial\theta_i\partial\theta_j$. The method has a truncation error of order $O(h^2)$.
+
+If the calculated analytical and numerical Hessians agree within a small relative error, such as $10^{-3}$, this would provide strong evidence for the correctness of the analytical derivations.
+
+\subsubsection{Computational Considerations}
+\label{sec:est:computational}
+The most expensive element of the analytical Hessian is the trace term $\tr[(\Ay^{-1}\mat{G})^2]$ in~\eqref{eq:Hg3g3}. Computing $\Ay^{-1}$ via LU factorisation scales as $O(n^3)$ \parencite[Alg.~3.2.1, p.~116]{GolubVanLoan2013}, so for networks larger than a few thousand individuals, direct computation becomes infeasible. An alternative is to approximate the trace using \emph{Hutchinson's stochastic trace estimator} \parencite{AvronToledo2011}. This has the advantage of reusing the LU factorisation already computed for the log-determinant. We describe how this can be done in Appendix~\ref{app:code:hutchinson}. For the Monte Carlo simulations performed in Chapter~\ref{chap:monte_carlo} we will only use network sizes where direct computation of the exact trace is feasible ($n \leq 2{,}000$).
+
+
+%% Section 5.4: Regularity Conditions for ML
+\section{Regularity Conditions for ML}
+\label{sec:est:regularity}
+We rely on the conditions established for spatial autoregressive models by \textcite[Thm.~3.2, p.~1906; Assumptions 1--8, pp.~1902--1904]{Lee2004} for the asymptotic properties of our MLEs. In our framework, the conditions that need to be met are:
+
+\begin{enumerate}
+    \item \textbf{Parameter space}: The true parameters lie in the interior of the parameter space, along with the stability restrictions $|\beta_1| < 1$ and $|\gamma_3| < 1$ (Assumptions~\ref{ass:screen_stability} and~\ref{ass:wb_stability}).
+    \item \textbf{Network regularity}: The weight matrix $\mat{G}$ has uniformly bounded row and column sums and is non-degenerate.
+    \item \textbf{Error distribution}: The errors $u_i$ and $\varepsilon_i$ are i.i.d.\ normal (Assumptions~\ref{ass:error_indep} and~\ref{ass:normality}).
+    \item \textbf{Identification}: The true parameter values are identified (Propositions~\ref{prop:screen_identification} and~\ref{prop:wb_ml_identification} for the SMU and WB equations, respectively).
+\end{enumerate}
+
+If the conditions above hold, it follows from \textcite[Thm.~3.2, p.~1906]{Lee2004} that the MLE is consistent and asymptotically normal with the information matrix giving the asymptotic variance. Because of our recursive structure, the WB equation conditional on observed $\vect{s}$ is a standard SAR model with design matrix $\mat{X} = [\vect{1}, \vect{s}, \vect{c}]$, so the results of \textcite{Lee2004} apply directly.
+
+In our setting with Assumptions~\ref{ass:screen_stability}--\ref{ass:no_isolates}, all of the conditions above are satisfied: the parameter space, apart from the stability restrictions $|\beta_1| < 1$ and $|\gamma_3| < 1$, is open, so the true parameters lie in the interior. By Assumption~\ref{ass:no_isolates}, $\mat{G}$ is row-stochastic and thus has row sums equal to one. For the column sums, the $j$-th column sum of $\mat{G}$ equals the number of individuals who have $j$ as a friend, divided by their respective degrees. This is bounded by the maximum in-degree, which in realistic social networks grows slowly relative to $n$. $\mat{G}$ will not be degenerate as long as the network is not pathologically structured (e.g., neither complete nor empty). The error distribution condition holds by Assumptions~\ref{ass:error_indep} and~\ref{ass:normality}, and the model is identified by Propositions~\ref{prop:screen_identification} and~\ref{prop:wb_ml_identification} for the SMU and WB equations, respectively.
+
+%% Section 5.5: 2SLS Estimation of the WB Equation
+\section{2SLS Estimation of the WB Equation}
+\label{sec:est:wb_2sls}
+When considering the SMU equation, we derived an ML estimator, but not a 2SLS estimator, for reasons discussed in Section~\ref{sec:est:screen_2sls}. As we will see in this section, the same problems do not arise for the WB equation. Here we use the instrumental variables framework introduced in Section~\ref{sec:bg:iv} to develop a 2SLS estimator for the WB equation. We also find the corresponding standard error formulas, and present diagnostic tests for both instruments and endogeneity.
+
+\subsection{The Endogeneity Problem}
+
+The WB equation has the following form:
+\begin{equation}
+    \vect{y} = \gamma_0\vect{1} + \gamma_1\vect{s} + \gamma_2\vect{c}
+    + \gamma_3\mat{G}\vect{y} + \vect{\varepsilon}
+\end{equation}
+
+As discussed in Section~\ref{sec:bg:iv}, the spatial lag $\mat{G}\vect{y}$ is endogenous: when individuals $i$ and $j$ are connected, $y_j$ depends on $\varepsilon_i$, so $\E[(\mat{G}\vect{y})_i \cdot \varepsilon_i] \neq 0$. This breaks the OLS exogeneity assumption, so we need instruments for $\mat{G}\vect{y}$.
+
+The regressors $\vect{s}$ and $\vect{c}$ do not have this same problem. They are exogenous in the WB equation, depending only on $\vect{u}$ from the SMU equation. By Assumption~\ref{ass:error_indep} (see Section~\ref{sec:model:id_wellbeing}), $\vect{u}$ is independent of $\vect{\varepsilon}$.
+
+\subsection{Instrument Construction}
+\label{sec:est:instruments}
+We now follow the identification strategy of Section~\ref{sec:model:identification} to develop instruments for $\mat{G}\vect{y}$. The main idea is to use network lags of exogenous variables as instruments to provide identification through the network. We again note that $\vect{s}$ and $\vect{c}$ are predetermined, and thus exogenous in the WB equation.
+
+In Proposition~\ref{prop:wb_identification} we showed that the excluded instruments $\mat{G}\vect{c}$ and $\mat{G}^2\vect{s}$ satisfy both relevance and exogeneity, and are sufficient for model identification. The relevance was shown through the reduced form, where the Neumann expansion~\eqref{eq:Gy_conditional} made the correlation with $\mat{G}\vect{y}$ clear (see Section~\ref{sec:model:identification}). Exclusion follows because the instruments are not direct regressors in the structural equation~\eqref{eq:wellbeing}. Exogeneity follows because, by Assumptions~\ref{ass:error_indep} and~\ref{ass:network_exog}, all instruments are functions of $(\vect{s}, \mat{G})$ alone, and thus independent of $\vect{\varepsilon}$.
+
+For estimation we also include the excluded instrument $\mat{G}^2\vect{c}$, which is relevant and exogenous by the same argument as above. We thus have an overidentified model with three instruments for the endogenous variable $\mat{G}\vect{y}$. With finite samples, including this additional network lag can increase estimation performance.
+
+Including the exogenous direct regressors, we thus have the following instrument set:
+\begin{equation}
+\label{eq:instrument_set}
+    \mat{Z} = [\vect{1}, \vect{s}, \vect{c}, \mat{G}\vect{c},
+    \mat{G}^2\vect{s}, \mat{G}^2\vect{c}]
+\end{equation}
+
+We note that $\mat{G}\vect{s}$ is not included in the instrument set, despite also being exogenous. We choose to omit it because of its similarity to the CoMO term. From the functional form of the CoMO term, $c_i = (\mat{G}\vect{s})_i - s_i$ when $c_i > 0$. Thus, $\mat{G}\vect{s}$ is nearly collinear with the already included $\vect{s}$ and $\vect{c}$. This makes the instrument weak relative to the others.
+
+\subsection{The 2SLS Estimator}
+
+We now develop our 2SLS estimator. In the previous setting using ML, $\gammavec = (\gamma_0, \gamma_1, \gamma_2)^\top$ was profiled out separately from $\gamma_3$. Here we will estimate all four coefficients jointly, and thus in this section we define $\gammavec_W = (\gamma_0, \gamma_1, \gamma_2, \gamma_3)^\top$ to capture all the coefficients (we use the subscript $W$ to distinguish it from the three-dimensional $\gammavec$). We first define $\mat{W}$, the matrix of all the regressors, along with $\mat{P}_Z$, the projection matrix onto the column space of the instrument set $\mat{Z}$:
+
+\begin{equation}
+    \mat{W} = [\vect{1}, \vect{s}, \vect{c}, \mat{G}\vect{y}]
+\end{equation}
+
+\begin{equation}
+    \mat{P}_Z = \mat{Z}(\mat{Z}^\top\mat{Z})^{-1}\mat{Z}^\top
+\end{equation}
+
+\subsubsection{First Stage: Project $\mat{W}$ onto $\mat{Z}$}
+The first part of the 2SLS procedure is to project the regressor matrix onto the instrument matrix, obtaining $\hat{\mat{W}}$:
+\begin{equation}
+    \hat{\mat{W}} = \mat{P}_Z\mat{W}
+\end{equation}
+
+As we have included the exogenous regressors $\vect{1}, \vect{s}, \vect{c}$ in $\mat{Z}$, these are simply projected onto themselves. For $\mat{G}\vect{y}$, this projection replaces it with the OLS predicted value from a regression on $\mat{Z}$:
+\begin{equation}
+    \widehat{\mat{G}\vect{y}} = \mat{Z}\hat{\bm{\pi}}, \qquad \hat{\bm{\pi}} = (\mat{Z}^\top\mat{Z})^{-1}\mat{Z}^\top\mat{G}\vect{y}
+\end{equation}
+
+
+\subsubsection{Second Stage: Project $\vect{y}$ onto $\hat{\mat{W}}$}
+
+We now project $\vect{y}$ onto the $\hat{\mat{W}}$ matrix found in the first stage to obtain the 2SLS estimator:
+\begin{equation}
+    \hat{\gammavec}_W^{\text{2SLS}} = (\hat{\mat{W}}^\top\hat{\mat{W}})^{-1}
+    \hat{\mat{W}}^\top\vect{y}
+\end{equation}
+
+By substituting for $\hat{\mat{W}}$, we can also write this equivalently in the standard IV form:
+\begin{equation}
+    \hat{\gammavec}_W^{\text{2SLS}} = (\mat{W}^\top\mat{P}_Z\mat{W})^{-1}
+    \mat{W}^\top\mat{P}_Z\vect{y}
+\end{equation}
+
+This is the 2SLS estimator for the WB equation. By projecting onto the instrument space through $\mat{P}_Z$ in the first stage, we replace the endogenous regressor with its instrumented component, which uses only exogenous variation under valid instruments. When standard regularity conditions with valid instruments (see Definition~\ref{def:valid_instruments}) are met, the 2SLS estimator is consistent and asymptotically normal \parencite[Sec.~4.2.1]{Angrist2009}:
+\begin{equation}
+    \sqrt{n}(\hat{\gammavec}_W^{\text{2SLS}} - \gammavec_{W,0}) \dto \N(\vect{0},\, \sigma_\varepsilon^2(\mat{Q}_{WZ}\mat{Q}_{ZZ}^{-1}\mat{Q}_{ZW})^{-1})
+\end{equation}
+Here, $n^{-1}\mat{W}^\top\mat{Z} \pto \mat{Q}_{WZ}$, $n^{-1}\mat{Z}^\top\mat{Z} \pto \mat{Q}_{ZZ}$, and $\mat{Q}_{ZW} = \mat{Q}_{WZ}^\top$. A strength of the 2SLS estimator compared to the MLE is that it does not require any distributional assumption on $\vect{\varepsilon}$. Instead, it relies on the moment conditions $\E[\mat{Z}^\top\vect{\varepsilon}] = \vect{0}$. Hence, the 2SLS estimator is more robust to distributional misspecification than the MLE, but generally less efficient when the distributional assumption holds.
+
+\subsection{Standard Errors}
+
+We find the expressions for both homoskedastic and heteroskedasticity-consistent (HC1) standard errors for the 2SLS estimator \parencite[Sec.~8.1, p.~299]{Angrist2009}.
+
+\subsubsection{Homoskedastic Standard Errors}
+
+Under the assumption that $\Var(\varepsilon_i) = \sigma_\varepsilon^2$ for all $i$, we have the following expression for the covariance matrix of the 2SLS estimator:
+\begin{equation}
+    \widehat{\Var}(\hat{\gammavec}_W^{\text{2SLS}}) =
+    \hat\sigma^2(\mat{W}^\top\mat{P}_Z\mat{W})^{-1}
+\end{equation}
+
+In this expression, $\hat\sigma^2 = \frac{1}{n-k}\|\vect{y} - \mat{W}\hat{\gammavec}_W^{\text{2SLS}}\|^2$ and $k = 4$ is the number of parameters. In Assumption~\ref{ass:normality} we assume i.i.d.\ normal errors with constant variance $\sigma_\varepsilon^2$, which is stronger than homoskedasticity alone. Hence, the formula above provides valid estimates of the standard errors.
+
+\subsubsection{Heteroskedasticity-Consistent (HC1) Standard Errors}
+
+For the homoskedastic standard errors we required an assumption of homoskedasticity. This assumption might not always hold. HC1 provides a more robust way to estimate standard errors using the sandwich formula:
+\begin{equation}
+\label{eq:robust_se}
+    \widehat{\Var}_{\text{robust}}(\hat{\gammavec}_W^{\text{2SLS}}) =
+    (\mat{W}^\top\mat{P}_Z\mat{W})^{-1}
+    \left(\frac{n}{n-k}\sum_{i=1}^n \hat\varepsilon_i^2 (\mat{P}_Z\mat{W})_i (\mat{P}_Z\mat{W})_i^\top\right)
+    (\mat{W}^\top\mat{P}_Z\mat{W})^{-1}
+\end{equation}
+where $\hat\varepsilon_i = y_i - \mat{W}_i \hat{\gammavec}_W^{\text{2SLS}}$ are residuals from the 2SLS, and $(\mat{P}_Z\mat{W})_i$ picks out the $i$-th row of $\mat{P}_Z\mat{W}$. Here the factor $n/(n-k)$ is the HC1 degrees-of-freedom correction. In the Monte Carlo simulations of Chapter~\ref{chap:monte_carlo}, we use the robust standard errors.
+
+\subsection{Diagnostics}
+\label{sec:est:diagnostics}
+In this section we explain how to implement various diagnostic tests that can be used to assess the validity and strength of our 2SLS estimation.
+
+\subsubsection{First-Stage $F$-Statistic}
+
+The first-stage $F$-statistic tests for weak instruments through the null hypothesis $H_0$ that the excluded instruments (those not in $\mat{W}$) have coefficients jointly equal to zero.
+
+We conduct the test by running a first-stage regression of the endogenous variable $\mat{G}\vect{y}$ on the full instrument set:
+\begin{equation}
+    \mat{G}\vect{y} = \mat{Z}\bm{\pi} + \vect{v}
+\end{equation}
+
+Here, $\bm{\pi}$ is the vector of first-stage coefficients and $\vect{v}$ is the first-stage error term. The $F$-statistic then tests whether the coefficients on $\mat{G}\vect{c}$, $\mat{G}^2\vect{s}$, and $\mat{G}^2\vect{c}$ in $\bm{\pi}$ are jointly zero. With $q$ the number of excluded instruments and $p$ the total number of regressors in $\mat{Z}$, the statistic is calculated as:
+\begin{equation}
+    F = \frac{(RSS_r - RSS_u)/q}{RSS_u/(n - p)}
+\end{equation}
+where $RSS_r$ is the residual sum of squares from the restricted regression (excluding the instruments) and $RSS_u$ is the residual sum of squares from the unrestricted regression.
+
+A common rule of thumb, due to \textcite[p.~557]{Staiger1997}, is that $F > 10$ indicates sufficiently strong instruments, while $F < 10$ signals potentially weak instruments. \textcite[Table~1]{StockYogo2005} provide more formal critical values that support this threshold. When instruments are weak, the 2SLS estimates can be biased and may perform worse than OLS\@.
+
+\subsubsection{Overidentification Test}
+
+When we have an overidentified model (more instruments than endogenous variables), we can test instrument validity through the Sargan--Hansen $J$-test \parencite{Sargan1958, Hansen1982}. The intuition behind this test is that if all the instruments are valid, they should approximately agree on the same parameter estimate. When we have more than one instrument, we can thus use this as a consistency check that helps validate the instruments. For our model we have three excluded instruments and one endogenous regressor, making this test relevant. The test statistic is:
+\begin{equation}
+    J = n \cdot \frac{\hat{\vect{\varepsilon}}^\top\mat{Z}(\mat{Z}^\top\mat{Z})^{-1} \mat{Z}^\top\hat{\vect{\varepsilon}}}{\hat{\vect{\varepsilon}}^\top\hat{\vect{\varepsilon}}}
+\end{equation}
+
+This tests $H_0$: all instruments are valid. Under $H_0$, $J \dto \chi^2_{m-k}$ as $n \to \infty$, with $m$ the number of instruments and $k$ the number of parameters. With our $\mat{Z}$ from~\eqref{eq:instrument_set}, we have $m = 6$ instruments and $k = 4$ parameters. Thus, for our model we have $J \dto \chi^2_2$ under $H_0$. We can thus reject $H_0$ at significance level $\alpha$ if $J > \chi^2_{2,1-\alpha}$, where $\chi^2_{2,1-\alpha}$ is the $(1-\alpha)$-quantile of the $\chi^2_2$ distribution.
+
+If $H_0$ is rejected, this suggests that at least one instrument is invalid, i.e., that it is correlated with the error term. In our case, this would decrease the plausibility of the exogeneity assumption (Assumption~\ref{ass:error_indep}). It is important to note that non-rejection of the Sargan--Hansen $J$-test is necessary, but not sufficient, for instrument validity.
+
+\subsubsection{Hausman Test}
+
+The final diagnostic test we provide is the Hausman test \parencite{Hausman1978}. This tests $H_0$ (no endogeneity) versus $H_1$ (endogeneity present). It does so by comparing the OLS and 2SLS estimates of the endogenous regressor's coefficient $\gamma_3$. We have a single endogenous regressor ($\mat{G}\vect{y}$), and thus the test reduces to a scalar comparison:
+\begin{equation}
+    H = \frac{(\hat{\gamma}_{3,\text{2SLS}} - \hat{\gamma}_{3,\text{OLS}})^2}{\widehat{\Var}(\hat{\gamma}_{3,\text{2SLS}}) - \widehat{\Var}(\hat{\gamma}_{3,\text{OLS}})}
+\end{equation}
+
+Under $H_0$, both the OLS and 2SLS estimators are consistent, but OLS is more efficient. $H \dto \chi^2_q$ as $n \to \infty$ under $H_0$, with $q$ being the number of endogenous regressors ($q = 1$ in our WB equation). When endogeneity is present (under $H_1$), 2SLS remains consistent, while OLS is inconsistent and exhibits bias. Thus, a rejection of $H_0$ indicates the need to use 2SLS over OLS\@. We note that the statistic might not always be defined, as the variance difference $\widehat{\Var}(\hat{\gamma}_{3,\text{2SLS}}) - \widehat{\Var}(\hat{\gamma}_{3,\text{OLS}})$ is only guaranteed to be positive semi-definite asymptotically, so it may fail to be positive in finite samples, leaving the test statistic undefined.
+
+%% Section 5.6: Comparison of ML and 2SLS
+\section{Comparison of ML and 2SLS}
+\label{sec:est:comparison}
+In this section we compare the assumptions and properties of the ML and 2SLS estimators for the WB equation. Table~\ref{tab:ml_vs_2sls} provides an overview of the similarities and differences.
+
+\begin{table}[htbp]
+\centering
+\caption[Comparison of the ML and 2SLS estimators for the WB equation]{Comparison of the ML and 2SLS estimators for the WB equation.}
+\label{tab:ml_vs_2sls}
+\small
+\begin{tabular}{lcc}
+\toprule
+Property & ML & 2SLS \\
+\midrule
+Consistency & Yes & Yes \\
+Efficiency (under normality) & Optimal (asymptotically) & Less efficient \\
+Distributional assumption & Normality & No parametric assumption \\
+Robustness to non-normality & Partial, SEs sensitive & Robust \\
+Requires $|\gamma_3| < 1$ & Yes & Yes \\
+Estimates $\sigma_\varepsilon^2$ directly & Yes & No, indirectly \\
+Computational method & Non-linear optimisation & Linear algebra only \\
+Standard errors & From analytical Hessian & From sandwich formula \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Some of the points in Table~\ref{tab:ml_vs_2sls} require a short explanation:
+
+First, the table indicates a difference in efficiency between the estimators. This stems from the MLE asymptotically achieving the Cram\'er--Rao lower bound under normality, making it asymptotically efficient (Theorem~\ref{thm:mle_asymptotic}). This is not true for the 2SLS estimator, which is consistent but generally not as efficient.
+
+The efficiency of the ML estimator relies on normality, which is not required by the 2SLS estimator. This makes the 2SLS estimator more robust, as it only relies on the moment conditions $\E[\mat{Z}^\top\vect{\varepsilon}] = \vect{0}$ and standard regularity conditions. When normality is violated, the ML point estimates can remain consistent as quasi-ML estimates under additional regularity assumptions \parencite[Thm.~3.2, p.~1906]{Lee2004}, while the analytical Hessian-based standard errors are no longer valid. 2SLS retains valid robust standard errors under weaker distributional assumptions.
+
+\subsubsection{Practical Recommendation}
+
+In practice we advise using both methods and comparing their estimates. If the estimates agree and are robust to the choice of method, this increases confidence in the results. If the estimates diverge, the source of the discrepancy should be investigated. In particular, for the ML estimates one would want to check whether the normality assumption seems plausible, and for the 2SLS estimates one would want to check instrument strength. We recommend reporting both sets of estimates in applied work, as this provides the reader with valuable information about robustness.
+
+For our model, we provide a comparison between the estimators in Chapter~\ref{chap:monte_carlo}, where we investigate their finite-sample performance through Monte Carlo simulations and show that both recover the true parameters under the model assumptions.
+
+%% Section 5.7: Hypothesis Testing for the CoMO Effect
+\section{Hypothesis Testing for the CoMO Effect}
+\label{sec:est:testing}
+The CoMO effect is present in our model through the $\gamma_2$ parameter. This parameter is perhaps the most interesting aspect of our model, as it captures a non-linear network-based mechanism. In this section we develop hypothesis tests for this parameter, as well as a joint test for both of the network-related coefficients $\gamma_2$ and $\gamma_3$.
+
+The key hypothesis we want to test is:
+\begin{align}
+    H_0&: \gamma_2 = 0 \quad \text{(No CoMO effect)} \\
+    H_1&: \gamma_2 \neq 0 \quad \text{(CoMO effect present)}
+\end{align}
+
+The test captures one of the central questions of our thesis: whether peer SMU comparison has an effect on WB\@. Developing a test for this allows us to use data to test $H_0$. Rejecting it would give evidence that individuals' WB depends not only on their own SMU but also on their peers' SMU\@. We note that here we define a two-sided test, while the CoMO mechanism anticipates $\gamma_2 < 0$ (reduction in WB from less SMU than peers). If this direction is known \emph{a priori}, the one-sided test with $H_1\!: \gamma_2 < 0$ would have more power.
+
+\subsection{Wald Test}
+
+We define the Wald test statistic by applying the Wald principle from the theory in Section~\ref{sec:bg:asymptotic}:
+\begin{equation}
+    t = \frac{\hat\gamma_2}{\widehat{\text{SE}}(\hat\gamma_2)}
+    \stackrel{H_0}{\sim} \N(0, 1) \quad \text{asymptotically}
+\end{equation}
+
+Here the standard errors used can be either from ML or 2SLS estimates. Under $H_0$, the Wald test statistic has the standard normal distribution asymptotically. We thus reject $H_0$ at significance level $\alpha$ if $|t| > z_{1-\alpha/2}$, where $z_{1-\alpha/2}$ is the $(1 - \alpha/2)$-quantile of the standard normal. We could also equivalently test using the Wald statistic $W = t^2$, which is distributed as $\chi^2_1$ under $H_0$.
+
+\subsection{Confidence Intervals}
+
+From the connection between a confidence interval and hypothesis testing we can also build confidence intervals for $\gamma_2$. The Wald test above implies the following asymptotic $(1-\alpha)$ confidence interval for $\gamma_2$:
+\begin{equation}
+    \hat\gamma_2 \pm z_{1-\alpha/2} \cdot \widehat{\text{SE}}(\hat\gamma_2)
+\end{equation}
+
+Here we can also use the standard errors from either ML or 2SLS\@. If we base it on the ML estimator, we find the CI using the Hessian-based standard errors from~\eqref{eq:se_formula}. For the 2SLS estimator, we find the CI using the robust standard errors from~\eqref{eq:robust_se}.
+
+\subsection{Joint Tests}
+
+In addition to testing the CoMO effect by itself, we might want to test whether network effects are present by testing whether the coefficients of all network-related terms are zero:
+\begin{align}
+    H_0&: \gamma_2 = \gamma_3 = 0 \quad \text{(No network effects on WB)}
+\end{align}
+
+This can also be tested with a Wald statistic:
+\begin{equation}
+    W = \hat{\gammavec}_R^\top[\mat{R}\widehat{\Var}(\hat{\thetavec}_y)\mat{R}^\top]^{-1}\hat{\gammavec}_R \dto \chi^2_2 \quad \text{as } n \to \infty
+\end{equation}
+
+Here, as before, $\hat{\thetavec}_y$ is the full estimated parameter vector, which can come from either ML or 2SLS estimation. $\mat{R}$ is a restriction matrix that selects the $\gamma_2$ and $\gamma_3$ components, and $\hat{\gammavec}_R = (\hat\gamma_2, \hat\gamma_3)^\top$ is the restricted estimated parameter vector.
+
+%% Section 5.8: Chapter Summary
+\section{Chapter Summary}
+\label{sec:est:summary}
+In this chapter, we developed estimators for the recursive CoMO model of Chapter~\ref{chap:model}.
+
+For both the SMU and WB equations, we found concentrated log-likelihoods and used these to derive ML estimators and analytical Hessians for asymptotic inference. We explained why 2SLS estimation is infeasible for the SMU equation. For the WB equation we used network instruments to derive the 2SLS estimators, along with estimators for standard errors. We compared the two estimators: ML is efficient under normality, while 2SLS is less efficient but more robust under distributional misspecification. Lastly, we developed hypothesis tests for the network coefficients.
+
+In the next chapter, we apply Monte Carlo simulations to validate the derived estimators. We verify that they recover true parameters, and that the standard errors from analytical Hessians and the 2SLS sandwich estimators are correct.

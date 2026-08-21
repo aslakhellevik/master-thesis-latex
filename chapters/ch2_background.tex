@@ -1,0 +1,733 @@
+%% Chapter 2: Background Theory
+
+\chapter{Background Theory}
+\label{chap:background}
+In this chapter we provide the theoretical basis for the thesis. We begin with the theory underlying the agent-based models (ABMs), used to diagnose bias under network effects (Section~\ref{sec:bg:abm}). We move on to network theory (Section~\ref{sec:bg:networks}), and the psychological theory motivating our novel cost of missing out (CoMO) mechanism (Section~\ref{sec:bg:social_comparison}). We then present the structural equation modelling framework and spatial autoregressive (SAR) models used to capture peer effects (Section~\ref{sec:bg:sar}), along with identification results for peer effects in networks (Section~\ref{sec:bg:identification}). We cover estimation through maximum likelihood and instrumental variables (Sections~\ref{sec:bg:mle}--\ref{sec:bg:iv}), and end with the foundations of Monte Carlo simulations (Section~\ref{sec:bg:monte_carlo}). In Chapter~\ref{chap:simultaneous} we develop the simultaneous CoMO model as an extension of the recursive CoMO model. The chapter is self-contained, and develops its own additional theory (block Jacobian determinants, Schur complements, and fixed-point equilibria) as needed.
+
+The results in this chapter are not original, and are either stated directly from textbook material, or reworked slightly for our purposes and notation. We include some proofs for completeness. Unless otherwise stated, these follow standard textbook arguments. The original contributions of this thesis are found in Chapters~\ref{chap:abm}--\ref{chap:simultaneous}.
+
+%% Section 2.1: Agent-Based Models
+\section{Agent-Based Models}
+\label{sec:bg:abm}
+ABMs are computational models that can be used to simulate interactions between agents \parencite{RailsbackGrimm2012}. Unlike more conventional statistical approaches based on population-level equation modelling, ABMs specify behavioural rules at the individual level. This allows for the emergence of macro-level patterns based on micro-level rules, which is not possible with more standard approaches. However, with this flexibility comes a cost in interpretability, as it can be hard to understand why macro-level patterns emerge. ABMs are well-suited when network effects, local dynamics, individual heterogeneity, or feedback loops are present in a system. In the context of research on SMU--WB, this is likely the case, which is why we apply ABMs in Chapter~\ref{chap:abm} to investigate how standard research methods are biased under network effects. In this section we will provide the conceptual theory behind ABMs.
+
+\subsection{Core Features of ABMs}
+
+According to \textcite[Ch.~1]{RailsbackGrimm2012}, the core aspects of ABMs and what they are able to model are the following:
+
+\begin{itemize}
+    \item \textbf{Heterogeneous agents}: Individuals can differ in attributes and update rules
+    \item \textbf{Local interactions}: Agents can interact with neighbours through a network, not just through population-level aggregates
+    \item \textbf{Emergent dynamics}: Micro-level rules allow for the emergence of macro-level patterns
+    \item \textbf{Feedback loops}: Behaviour at time $t$ can have an effect on future states
+\end{itemize}
+
+\subsection{ABMs in Social Science}
+
+ABMs have been applied for various purposes in social science. One of the earliest and most influential uses was by \textcite{Schelling1971} in a novel model of residential segregation. Here, Schelling showed how even mild preferences for neighbours of a similar type to oneself can end up producing strong segregation patterns. This showcases how micro-level rules can lead to the emergence of surprising macro-level patterns.
+
+After the initial application, ABMs have been applied to a diverse set of social phenomena including organisational simulation, the spreading of innovations and behaviours through networks, financial markets, and flow simulations \parencite[p.~7281]{Bonabeau2002}. This versatility has led some, like \textcite[Ch.~1]{Epstein2006}, to advocate for a ``generative social science'', where social phenomena are deemed explained or understood only when we are able to build them bottom-up through ABM simulations. See also \textcite{Macy2002} for a broader discussion of the role of ABMs in computational sociology. The wide landscape of applications reflects the strength and versatility of ABMs, which is exactly what makes them a good fit for social media research, where behaviour and WB plausibly depend on peers through a network structure.
+
+\subsection{ABMs as a Tool for Method Validation}
+
+Due to their flexibility in building bottom-up simulations from an individual-level perspective, ABMs can investigate complex social phenomena that otherwise evade modelling. This flexibility also makes ABMs suitable for general method validation \parencite{DazaKreuger2021}. Using simulations, we can set up a controlled environment with known relationships and structures, and use this to test whether various methods recover true effects or not.
+
+Validating a method in this way requires four steps:
+
+\begin{enumerate}
+    \item \textbf{Specification of the data-generating process}: We first need to completely specify a data-generating process (DGP) by defining our agents, their attributes, rules for how they interact and behave, and the functional relationship determining how outcomes are calculated. This process defines the true causal connections in the data.
+    \item \textbf{Generation of data}: Next, we generate data according to the process defined, and run the simulation for an appropriate length to make sure we can observe emergent behaviour among the individuals.
+    \item \textbf{Application of methods}: Having run our simulation, we have generated a dataset under controlled conditions with knowledge of the true relationships. We can now apply the statistical method(s) we are investigating to the simulation results to estimate causal effects (or other statistics) on the synthetic data.
+    \item \textbf{Comparison of results}: Lastly, we compare the outputs of our methods with the true underlying parameters to check whether the methods recover them correctly, or if they show bias.
+\end{enumerate}
+
+Validation through ABMs is similar to the more common Monte Carlo simulation studies often applied in statistics and econometrics. Compared to Monte Carlo methods, ABMs let us define a richer and more realistic DGP\@. Instead of generating data from one pre-defined parametric model, as is often the case with Monte Carlo studies, ABMs give us the freedom to define complex, non-linear, and temporal relationships that might not be easily captured by any particular statistical model. In cases where the underlying world is complex in such a way, the method validation made possible by ABMs can provide valuable information.
+
+We will apply ABMs as a tool for method validation in Chapter~\ref{chap:abm}, where we are interested in whether standard research methods correctly recover causal effects when there are network effects in the DGP\@. The answer we will find is that they cannot, motivating the development of novel network-aware models.
+
+%% Section 2.2: Network Theory
+\section{Network Theory}
+\label{sec:bg:networks}
+This section provides the background theory on networks needed for the applications throughout the thesis. In Chapter~\ref{chap:abm} we use this theory to generate simulated networks, and in Chapters~\ref{chap:model}--\ref{chap:estimation} to formalise peer effects and identification.
+
+\subsection{Basic Definitions}
+
+We begin with three definitions of concepts used throughout the thesis: social networks, adjacency matrices, and neighbourhoods \parencite[see][for a comprehensive treatment]{Jackson2008}. These are needed to model social networks and peer effects.
+
+\begin{definition}[Social Network, {\textcite[Sec.~2.1.2, p.~40]{Jackson2008}}]
+We define a social network as a graph $\mathcal{G} = (\mathcal{V}, \mathcal{E})$ consisting of a set of individuals (nodes) $\mathcal{V} = \{1, \ldots, n\}$ and a set of connections (edges) $\mathcal{E} \subseteq \mathcal{V} \times \mathcal{V}$. A connection between individuals $i$ and $j$ is represented by the pair $(i, j) \in \mathcal{E}$.
+\end{definition}
+
+\begin{definition}[Adjacency Matrix, {\textcite[Sec.~2.1.2, p.~40]{Jackson2008}}]
+We define the adjacency matrix $\mat{A} \in \{0,1\}^{n \times n}$ by:
+\begin{equation}
+    A_{ij} = \begin{cases}
+        1 & \text{if } (i,j) \in \mathcal{E} \\
+        0 & \text{otherwise}
+    \end{cases}
+\end{equation}
+Here $\mathcal{E}$ is the set of connections of a social network. We do not allow self-loops, so $A_{ii} = 0$ for all $i$. If the network is undirected, we have $\mat{A} = \mat{A}^\top$.
+\end{definition}
+
+\begin{definition}[Neighbourhood and Degree, {\textcite[Secs.~2.1.7--2.1.8, pp.~50--51]{Jackson2008}}]
+Given a social network $\mathcal{G}$, we define the neighbourhood of node $i$ as $N_i = \{j : A_{ij} = 1\}$. Thus, the neighbourhood of $i$ is the set of all nodes connected to $i$. We define the degree of node $i$ as $\deg_i = |N_i| = \sum_j A_{ij}$.
+\end{definition}
+
+\subsection{Row-Normalised Adjacency Matrix}
+
+In practice, when we want to calculate peer effects based on the network, we will use the \emph{row-normalised} adjacency matrix:
+
+\begin{definition}[Row-Normalised Adjacency Matrix, {\textcite[Eq.~(1) and footnote~13, p.~43]{Bramoulle2009}}]
+\label{def:row_normalised}
+Given neighbourhoods $N_i$ for each individual $i$ in a social network $\mathcal{G}$, we define the row-normalised adjacency matrix $\mat{G}$ as:
+\begin{equation}
+    G_{ij} = \begin{cases}
+        \frac{1}{|N_i|} & \text{if } j \in N_i \\
+        0 & \text{otherwise}
+    \end{cases}
+\end{equation}
+\end{definition}
+
+When we row-normalise, we are also making $\mat{G}$ row-stochastic. As long as each individual has at least one connection, each row of $\mat{G}$ sums to 1. This is useful for calculating neighbour averages: for any vector $\vect{x}$, $\mat{G}\vect{x}$ gives us the vector of neighbour averages:
+\begin{equation}
+    (\mat{G}\vect{x})_i = \frac{1}{|N_i|} \sum_{j \in N_i} x_j = \bar{x}_i
+\end{equation}
+
+For row-stochastic matrices we also have the following standard lemma on the boundedness of eigenvalues:
+
+\begin{lemma}[Spectral Radius of Row-Stochastic Matrices]
+\label{lem:spectral_radius}
+We let $\mat{G}$ be a row-stochastic matrix. Then, all eigenvalues $\lambda$ of $\mat{G}$ satisfy $|\lambda| \leq 1$.
+\end{lemma}
+
+\begin{proof}
+Consider any eigenvalue and eigenvector pair $\lambda$ and $\vect{v} \neq \vect{0}$ of $\mat{G}$. Then, by definition, $\|\mat{G}\vect{v}\|_\infty = |\lambda|\,\|\vect{v}\|_\infty$. Now, $\mat{G}$ is row-stochastic, and has non-negative entries, implying $\|\mat{G}\|_\infty = \max_i \sum_j G_{ij} = 1$ \parencite[Eq.~(2.3.10), p.~72]{GolubVanLoan2013}. Thus we also have $\|\mat{G}\vect{v}\|_\infty \leq \|\vect{v}\|_\infty$. It follows that $|\lambda| \leq 1$.
+\end{proof}
+
+
+\subsection{Random Network Models}
+
+When we simulate in Chapters~\ref{chap:abm} and~\ref{chap:monte_carlo}, we need to generate random networks for our simulations, with stable properties for comparison. For this purpose we will use Erd\H{o}s--R\'enyi random graphs.
+
+\begin{definition}[Erd\H{o}s--R\'enyi Random Graph, {\textcite{ErdosRenyi1959, Gilbert1959}}]
+For a population of $n$ individuals and a given connection probability $p$ we define the Erd\H{o}s--R\'enyi Random Graph $G(n, p)$ as the $n \times n$ adjacency matrix $\mat{A}$ where each of the $\binom{n}{2}$ possible edges is set to $1$ with probability $p$, independently.
+\end{definition}
+
+We note some key properties of $G(n, p)$:
+\begin{itemize}
+    \item The expected number of edges in the graph is $\binom{n}{2} p$
+    \item The expected degree of each node is $(n-1)p$
+    \item The network is connected (every node can be reached from every other node through a chain of edges) with high probability when $p > \frac{\log n}{n}$
+\end{itemize}
+
+Compared to real social networks, the Erd\H{o}s--R\'enyi model gives more homogeneous networks. This is because degrees in real social networks have a heavier-tailed distribution \parencite[p.~510]{BarabasiAlbert1999}. For our purposes in Chapter~\ref{chap:abm}, this does not matter, as a tractable semi-realistic network suffices for our simulations. In fact, as more heterogeneous networks are likely to produce stronger local peer effects, using the Erd\H{o}s--R\'enyi model may make the ABM results conservative. For the identification results in Section~\ref{sec:bg:identification} and Chapter~\ref{chap:model} we only require certain conditions of the rank and linear independence of the row-normalised adjacency matrix, without further specification of the network structure.
+
+%% Section 2.3: Social Comparison
+\section{Social Comparison}
+\label{sec:bg:social_comparison}
+One of the key methodological elements of this thesis is the CoMO mechanism that captures the influence of social comparison regarding SMU\@. The application of CoMO to the SMU--WB question was introduced by \textcite[Eqs.~1--2]{DahlFoldnesGronneberg2024}, as a reframing of the fear of missing out (FOMO) phenomenon. In this thesis we develop a formalisation of the mechanism as a component of an identifiable SAR model. In Chapter~\ref{chap:abm} we include CoMO in simulations, showing how this leads to bias in standard research methods. In Chapter~\ref{chap:model} we introduce the explicit modelling of this mechanism. This section provides the psychological theory behind social comparison and the FOMO phenomenon, which motivates our specific formalisation of the CoMO mechanism.
+
+\subsection{Social Comparison Theory}
+
+Social comparison theory describes how humans evaluate themselves by comparison with others. It was first introduced by \textcite{Festinger1954}, who proposed an innate drive in humans to evaluate their own opinions and abilities through comparison with others. Festinger argued that people have a preference for comparing themselves with people similar to themselves, and claimed that these comparisons can influence self-evaluation, emotions, and behaviour.
+
+Subsequent research has split comparisons into two types \parencite{Wills1981, Wood1989}. Comparisons with people doing better than oneself (upward comparisons) can provide motivation, but can also hurt self-esteem. Those with people doing worse than oneself (downward comparisons) may provide comfort, but also reduce motivation. The magnitude of the consequences of the types of comparison will depend on the perceived relevance of both the topic of comparison and the person being compared with.
+
+The nature of social media platforms is such that social comparison might be intensified. Users often post about the best moments of their lives: vacations, achievements, social events, and similar experiences. This creates an asymmetric environment with more opportunities for upward comparisons, while the lack of more mundane or negative experiences might remove the basis for downward comparison \parencite[Ch.~6]{Haidt2024}. An example of such comparison concerns body image. When the portrayal of appearance is filtered and curated, this creates an upward comparison which has been linked to reduced well-being and body satisfaction among adolescent girls \parencite{Fardouly2015}.
+
+\subsection{Fear of Missing Out (FOMO)}
+
+The concept of FOMO was introduced by \textcite[p.~1841]{Przybylski2013} as ``a pervasive apprehension that others might be having rewarding experiences from which one is absent''. Developing a way to measure FOMO, they found that it was associated with both high social media use and lower mood and life satisfaction.
+
+The social comparison captured by FOMO is a specific type focusing on experiences and social inclusion. In particular, it captures the negative emotions caused by perceiving others as having positive or meaningful experiences from which one is absent. FOMO can be triggered by social media when one discovers experiences peers have had that one has missed out on. It can also trigger compulsive checking of social media caused by a worry of missing out on what others are doing \parencite[p.~1846]{Przybylski2013}.
+
+\subsection{From FOMO to Cost of Missing Out}
+
+The theories of social comparison and FOMO suggest that WB might depend on comparison with others on social media. In particular, it might be influenced not only by individual SMU, but also by that of peers. When similar people exhibit a certain behaviour, social comparison theory suggests that it may influence one's WB\@. In particular, someone using social media less than their peers might miss out on social context, feel (and be) excluded from online interactions, and experience FOMO from others having rewarding experiences without them.
+
+This point has recently been argued by \textcite{DahlFoldnesGronneberg2024}. In the SMU--WB debate they argue that instead of thinking about peer effects as a \emph{fear} of missing out (FOMO), the relevant peer-comparison effect is better captured as a \emph{cost} of missing out (CoMO). When peer SMU is high, lower individual SMU incurs a cost due to exclusion from shared social context. In \textcite[Eqs.~1--2]{DahlFoldnesGronneberg2024} this mechanism is exemplified by a stylised linear mediation model where CoMO enters as a symmetric deviation from the population mean SMU\@. In this thesis we adopt the CoMO terminology and conceptual framing. Taking inspiration from the underlying psychological literature we develop a formalisation based on two main features: asymmetric effects, and proportionality to the size of differences between individual and peer SMU\@.
+
+We first note that in the SMU--WB case, social comparison seems to be asymmetric. These costs associated with loss of shared experiences, social context, and negative self-evaluation all occur specifically when individual SMU is below that of peers. We do not find convincing evidence to expect symmetry here: when individual SMU is higher than that of peers, we do not expect a positive effect on WB through a corresponding comparison. Upward comparisons may trigger negative consequences and FOMO, but the absence of upward comparison might just imply that FOMO and other comparison effects are absent, not that a benefit is present. This asymmetry is also supported by prospect theory, which has shown that humans have a tendency for loss aversion: when equivalent losses and gains are compared, people tend to weigh losses more heavily \parencite[p.~279]{KahnemanTversky1979}. We thus find it plausible that being ``left out'' incurs a social loss that does not have a natural symmetric counterpart when one is not left out.
+
+Second, when an individual has lower SMU than peers, we find it reasonable that the cost incurred is proportional to the magnitude of the difference between one's own and peers' SMU\@. If an individual's SMU is slightly less than their peers', they lose out on some social context, and might experience some FOMO\@. However, someone using it substantially less will lose out on substantially more (more conversations, more context), with the loss proportional to the size of the gap between the individual and their peers. We believe that the most parsimonious functional form to describe this relationship is therefore linear in the difference between peer and own SMU\@.
+
+We formalise these intuitions and findings into the specific variant of CoMO used in this thesis. Introduced more formally in Chapter~\ref{chap:model}, our variant captures the asymmetry of peer comparison by introducing a cost to WB that is linear in the difference between own SMU and peer SMU, but only when own SMU is the lower of the two. Instead of a global reference, we use a network-structured peer mean to capture more realistic network effects. This specification builds on the stylised linear form of \textcite[Eqs.~1--2]{DahlFoldnesGronneberg2024}, extending it into a more realistic version which accounts for local network effects. As we show in Chapter~\ref{chap:abm}, CoMO poses problems for standard statistical methods, motivating the development of the explicit modelling of the CoMO mechanism in Chapter~\ref{chap:model}.
+
+%% Section 2.4: Spatial Autoregressive Models
+\section{Spatial Autoregressive Models}
+\label{sec:bg:sar}
+In Chapter~\ref{chap:model} we develop a structural model taking network effects into account, and in Chapter~\ref{chap:estimation} we develop estimation strategies for this model. In this section we first motivate the structural modelling approach as a way of capturing causal effects, and then present the SAR framework that our model builds on.
+
+\subsection{Structural Models as a Causal Framework}
+\label{sec:bg:sem}
+The main challenge this thesis addresses is how to model causal effects under network effects. In Chapter~\ref{chap:introduction} we saw how the field of SMU--WB research heavily relies on SUTVA (Assumption~\ref{ass:sutva}). This requires each individual's outcome to depend only on their own treatment, and not on the treatment of others. Under network effects, this does not hold. For example, unless it is carefully accounted for, assigning someone to less SMU would leak as a spillover effect into a control group through the network. A fully unrestricted extension of the potential-outcomes framework \parencite{Rubin1974} to networked settings is impractical: as the network size grows, the number of potential outcomes we would need to model grows exponentially. This is because a general network makes each individual $i$'s potential outcome depend on the full vector of all $n$ individuals, yielding $2^n$ potential outcomes per person under binary treatment \parencite[Sec.~2.1]{HudgensHalloran2008}. Instead, we will model causal effects through a \emph{structural} approach.
+
+We will do this through structural equation models (SEMs). These allow for direct parametric specification of causal mechanisms, and do not require the SUTVA assumption. Through inclusion of peer effects into our structural equations, we can estimate and interpret network effects by directly specifying them as components of the underlying DGP\@. Formally, we define SEMs as follows \parencite[Sec.~1.4.1, p.~27; Ch.~5; Ch.~7]{Pearl2009}:
+
+\begin{definition}[Structural Equation Model]
+A structural equation model is a model that consists of:
+\begin{enumerate}
+    \item A set of endogenous variables $Y_1, \ldots, Y_m$
+    \item A set of exogenous variables $X_1, \ldots, X_k$
+    \item A set of error terms $\varepsilon_1, \ldots, \varepsilon_m$
+    \item A system of structural equations that relate the above components:
+    \begin{equation}
+        Y_j = f_j(Y_{-j}, X, \varepsilon_j)
+    \end{equation}
+    where $Y_{-j}$ denotes all the endogenous variables except $Y_j$.
+\end{enumerate}
+\end{definition}
+
+For our purpose, we will interpret structural equations as directly representing causal mechanisms, and not just statistical associations. Thus, for example, we will interpret an equation of the form $Y = \beta X + \varepsilon$ as an assertion that a change in $X$ by one unit \emph{causes} a change in $Y$ by $\beta$ units, holding all else equal.
+
+Using SEMs, we can create a model that allows us to quantify the size of peer effects. As we will show in Chapter~\ref{chap:model}, we can also successfully separate direct effects on individual WB from indirect effects that propagate through the network.
+
+In the following subsections we will introduce the SAR model as a special case of a structural equation model. In Chapter~\ref{chap:model} we will exploit the fact that we can model peer and network effects explicitly to create a model solving the bias issues of standard methods shown in Chapter~\ref{chap:abm}.
+
+We note that the main challenge of this type of modelling is to get the assumptions about functional form and error distributions right. Without a correct specification, estimation using SEMs can give biased and erroneous results.
+
+\subsection{Model and Components}
+
+In the SAR model we capture peer effects through the spatial lag $\mat{G}\vect{y}$ based on the network. This makes each individual's outcome partly mirror their peers' outcomes. The model equation is:
+
+\begin{equation}
+\label{eq:sar_basic}
+    \vect{y} = \rho \mat{G}\vect{y} + \mat{X}\bm{\beta} + \vect{\varepsilon}
+\end{equation}
+
+The components are as follows:
+\begin{itemize}
+    \item $\vect{y}$ denotes the vector of outcomes for $n$ individuals
+    \item $\mat{G}$ is the row-normalised adjacency matrix
+    \item $\rho$ is an autoregressive parameter controlling the strength of peer effects
+    \item $\mat{X}$ is a matrix of exogenous covariates (of size $n \times k$ where $k$ denotes the number of covariates)
+    \item $\vect{\varepsilon}$ is a vector of $n$ error terms
+\end{itemize}
+
+This follows the standard SAR model specification \parencite[Eq.~(1.17), p.~16; Ch.~2.6, p.~32]{LeSage2009}. In the spatial econometrics literature, the matrix $\mat{G}$ is typically a weight matrix constructed from geographic proximity. For our use we instead employ the row-normalised adjacency matrix $\mat{G}$, applying the same mathematical framework to a social network.
+
+\subsection{Reduced Form and Equilibrium}
+
+When we define our structural model in Chapter~\ref{chap:model}, we need to ensure that the model is well-defined, in the sense that the structural equation admits a unique solution for $\vect{y}$. In the SAR equation, $y_i$ is both the outcome and a component in the peer term $\mat{G}\vect{y}$, which in turn influences the outcome. Thus, the existence and uniqueness of a solution for $\vect{y}$ are not trivial. Here we establish the conditions under which they hold for the SAR model.
+
+We start by rearranging~\eqref{eq:sar_basic}:
+\begin{equation}
+    \label{eq:sar_basic_rearranged}
+    (\mat{I} - \rho\mat{G})\vect{y} = \mat{X}\bm{\beta} + \vect{\varepsilon}
+\end{equation}
+
+We then make the following assumption, which we require in the proposition below.
+
+\begin{assumption}[Stability Condition]
+\label{ass:stability}
+The parameter $\rho$ in Equation~\eqref{eq:sar_basic_rearranged} satisfies $|\rho| < 1$ \parencite[Eq.~(1.12), p.~14; also Eq.~(3.6), p.~47]{LeSage2009}.
+\end{assumption}
+
+\begin{proposition}[Invertibility]
+\label{prop:invertibility}
+When Assumption~\ref{ass:stability} holds, the matrix $(\mat{I} - \rho\mat{G})$ is invertible.
+\end{proposition}
+
+\begin{proof}
+We will show invertibility of $(\mat{I} - \rho\mat{G})$ by constructing an explicit inverse via the Neumann series.
+
+We first find the operator norm of $\mat{G}$. By Definition~\ref{def:row_normalised}, $\mat{G}$ is row-stochastic, so every row sums to one. As the $\ell^\infty$ operator norm of a matrix is the maximum absolute row sum, it follows that:
+\begin{equation*}
+    \|\mat{G}\|_\infty = \max_i \sum_j |G_{ij}| = \max_i \sum_j G_{ij} = 1.
+\end{equation*}
+Here, the second equality follows from all entries of $\mat{G}$ being non-negative.
+
+Using this, we can find the operator norm of $\rho\mat{G}$:
+\begin{equation*}
+    \|\rho\mat{G}\|_\infty = |\rho| \cdot \|\mat{G}\|_\infty = |\rho| \cdot 1 = |\rho|.
+\end{equation*}
+Under Assumption~\ref{ass:stability}, $|\rho| < 1$, so we have $\|\rho\mat{G}\|_\infty < 1$.
+
+Now, by the submultiplicativity of operator norms, we have:
+\begin{equation*}
+    \|(\rho\mat{G})^k\|_\infty \leq \|\rho\mat{G}\|_\infty^k = |\rho|^k.
+\end{equation*}
+
+As $|\rho| < 1$, the geometric series $\sum_{k=0}^{\infty} |\rho|^k = (1 - |\rho|)^{-1} < \infty$ converges. By series comparison it follows that the Neumann series $\sum_{k=0}^{\infty} (\rho\mat{G})^k$ converges absolutely in operator norm. Then, by the Neumann series theorem \parencite[Lemma~2.3.3, p.~74]{GolubVanLoan2013}, $(\mat{I} - \rho\mat{G})$ is invertible with
+\begin{equation*}
+    (\mat{I} - \rho\mat{G})^{-1} = \sum_{k=0}^{\infty} (\rho\mat{G})^k. \qedhere
+\end{equation*}
+\end{proof}
+
+By Proposition~\ref{prop:invertibility}, $(\mat{I} - \rho\mat{G})$ is invertible, and the SAR model has a unique equilibrium. We can write it in reduced form:
+\begin{equation}
+\label{eq:reduced_form}
+    \vect{y} = (\mat{I} - \rho\mat{G})^{-1}\mat{X}\bm{\beta} + (\mat{I} - \rho\mat{G})^{-1}\vect{\varepsilon}
+\end{equation}
+
+These results will be applied to the structural model of Chapter~\ref{chap:model}.
+
+In Chapter~\ref{chap:estimation} we will use the fact that the determinant of $(\mat{I} - \rho\mat{G})$ is strictly positive under the stability condition. We establish this in the proposition below as a direct consequence of Lemma~\ref{lem:spectral_radius}, by factorising the determinant through the eigenvalues of $\mat{G}$.
+
+\begin{proposition}[Positivity of the Jacobian Determinant]
+\label{prop:det_positive}
+    We let $\mat{G}$ be a real row-stochastic matrix. Then, under Assumption~\ref{ass:stability} ($|\rho| < 1$), $\det(\mat{I} - \rho\mat{G}) > 0$.
+\end{proposition}
+
+\begin{proof}
+    If we let $\lambda_i$ be the eigenvalues of $\mat{G}$, then the eigenvalues of $\mat{I} - \rho\mat{G}$ are $1 - \rho\lambda_i$. Using this, we can factorise the determinant as $\det(\mat{I} - \rho\mat{G}) = \prod_i (1 - \rho\lambda_i)$. If we can show that each factor is positive, it follows that the determinant is positive. As $\mat{G}$ is row-stochastic, we can apply Lemma~\ref{lem:spectral_radius}, and get that all eigenvalues satisfy $|\lambda_i| \leq 1$. Combining this with the assumption on $\rho$ yields $|\rho\lambda_i| < 1$ for all $i$. Now, for each factor in $\prod_i (1 - \rho\lambda_i)$, $\lambda_i$ is either real or complex. If $\lambda_i$ is real, $\rho\lambda_i \in (-1, 1)$ implies $1 - \rho\lambda_i \in (0, 2)$. If $\lambda_i$ is complex, as $\mat{G}$ is real this will only be the case when we have a conjugate pair of complex eigenvalues $\lambda, \bar{\lambda}$. Then, we will always have two factors such that $(1 - \rho\lambda)(1 - \rho\bar{\lambda}) = |1 - \rho\lambda|^2 > 0$. As all (pairs of) factors are positive, it follows that $\det(\mat{I} - \rho\mat{G}) > 0$.
+\end{proof}
+
+We can interpret the reduced form to say what influences each observation. Each observation depends on the individual's own covariates directly through $\mat{X}$, and the individual's own error term directly through $\vect{\varepsilon}$. However, through the multiplier $(\mat{I} - \rho\mat{G})^{-1}$, observations also depend on neighbours' covariates and error terms. These are indirect effects that propagate through the network.
+
+We can also interpret the reduced form through the Neumann series expansion used in the proof of Proposition~\ref{prop:invertibility}:
+\begin{equation}
+    (\mat{I} - \rho\mat{G})^{-1} = \sum_{k=0}^{\infty} \rho^k \mat{G}^k
+\end{equation}
+
+Here we see that network effects propagate through the network with an impact that decays geometrically (as $|\rho| < 1$) with distance. Terms including $\mat{G}^k$ can be interpreted as effects from $k$-distant neighbours on individual observations.
+
+\begin{remark}[Simultaneous Systems]
+\label{rem:simul_systems}
+The SAR model above is a single-equation model, with one structural equation. In general, we might have a system of multiple structural equations, which jointly determine multiple endogenous variables. The equations can be coupled, with influences flowing between them, and there might not exist closed-form reduced forms. Such systems often use full-information maximum likelihood (FIML) estimation, which exploits the Jacobian of the full system to perform joint estimation. We will develop the theory for this as needed in Chapter~\ref{chap:simultaneous}.
+\end{remark}
+
+%% Section 2.5: Identification of Peer Effects
+\section{Identification of Peer Effects}
+\label{sec:bg:identification}
+In models attempting to capture peer effects, identification is a major concern. This section includes the theoretical background for the reflection problem, which is a fundamental challenge in estimating peer effects. We also give the theory behind a solution proposed by \textcite{Bramoulle2009} that uses network structure to provide identification. This theory will be adapted to the structural model introduced in Chapter~\ref{chap:model} to show that it is identified, and to motivate instrument construction for estimation in Chapter~\ref{chap:estimation}.
+
+An intuitive idea for how networks can provide identification comes from intransitive triads. Someone who is not a friend of yours, but a friend-of-friend, can still affect you through the networked effect on your friends. This gives exploitable variation beyond what your first-order friends provide.
+
+\subsection{The Reflection Problem}
+
+\textcite[Sec.~2]{Manski1993} was the first to point out the reflection problem as a key challenge when attempting to estimate peer effects.
+
+He distinguished three separate effects to account for by considering the ``linear-in-means'' model (here slightly simplified for illustration):
+\begin{equation}
+    \label{eq:lin_in_means}
+    y_i = \alpha + \beta \bar{x}_i + \gamma \bar{y}_i + \varepsilon_i
+\end{equation}
+
+In this model, group averages of covariates and outcomes are included through $\bar{x}_i$ and $\bar{y}_i$ respectively.
+
+The three effects he identified were:
+\begin{itemize}
+    \item \textbf{Endogenous effects}: When individual outcomes depend on the outcomes of peers (through $\gamma$ in the linear-in-means model), we have endogenous effects present. With these present, an effect of individual $i$ on $j$ would lead to a simultaneous effect of $j$ on $i$, causing a ``reflection''.
+    \item \textbf{Contextual effects}: If individual outcomes depend on peer characteristics (through $\beta$ in the linear-in-means model), we have contextual effects.
+    \item \textbf{Correlated effects}: When individuals in the same group experience common shocks (for example from selection effects, or a common environment), there are correlated effects. In the model above, correlated effects enter through within-group correlation in $\varepsilon_i$.
+\end{itemize}
+
+The reflection problem highlights that correct estimation of these three effects separately is impossible using this model without further information. This is because any observed correlation between individual outcomes and peer outcomes can be attributed either to the true peer influence ($\gamma$), to contextual effects (through $\beta$), or to correlated shocks, which are observationally equivalent in the linear-in-means model. To see this, we can take the group average on both sides of Equation~\eqref{eq:lin_in_means}, yielding
+
+\begin{equation}
+    \label{eq:lin_in_means_expectation}
+    \bar{y}_i = \alpha + \beta\bar{x}_i + \gamma\bar{y}_i + \bar{\varepsilon}_i,
+\end{equation}
+
+where $\bar{y}_i$ is the average outcome and $\bar{\varepsilon}_i$ the average error. Now, solving for $\bar{y}_i$ yields: $\bar{y}_i = (\alpha + \beta\bar{x}_i + \bar{\varepsilon}_i)/(1-\gamma)$. Substituting this back into Equation~\eqref{eq:lin_in_means}, we get an equation which is a function of $\bar{x}_i$ and errors alone:
+\begin{equation}
+    y_i = \frac{\alpha}{1-\gamma} + \frac{\beta}{1-\gamma}\bar{x}_i + \frac{\gamma}{1-\gamma}\bar{\varepsilon}_i + \varepsilon_i
+\end{equation}
+
+This makes it impossible to separate $\beta$ and $\gamma$, as the two parameters map into only one identifiable quantity. This challenge needs to be overcome if we want to be able to estimate peer effects.
+
+
+\subsection{Solution Through Network Structure}
+
+The idea of \textcite{Bramoulle2009} is to use network structure to provide identification. This can solve cases where the reflection problem would otherwise lead to issues. To do this, the necessary and sufficient condition is that the matrices $\mat{I}$, $\mat{G}$, and $\mat{G}^2$ are linearly independent. This is formalised below. There is also an intuitive sufficient condition for when this is possible: the presence of \emph{intransitive triads}. Intransitive triads are here defined as sets of three individuals $i$, $j$, $k$ where $i$ is connected to $j$ and $j$ is connected to $k$, but where $i$ is not directly connected to $k$. When we have such a triad structure, friends-of-friends provide new variation, not already captured by direct friends, that can be used for identification.
+
+We state \textcite[Proposition~1, p.~44]{Bramoulle2009} with a proof sketch below.
+
+\begin{proposition}[Identification Through Network Structure, {\textcite[Prop.~1, p.~44]{Bramoulle2009}}]
+\label{prop:bramoulle}
+Consider the linear-in-means model, a SAR specification with exogenous covariates (SARX):
+\begin{equation*}
+    \vect{y} = \rho \mat{G}\vect{y} + \mat{X}\bm{\beta} + \mat{G}\mat{X}\bm{\delta} + \vect{\varepsilon}.
+\end{equation*}
+Suppose:
+\begin{enumerate}
+    \item[$(i)$] $|\rho| < 1$
+    \item[$(ii)$] $\E[\vect{\varepsilon} \mid \mat{X}] = \vect{0}$
+    \item[$(iii)$] $\mat{G}$ is row-normalised
+    \item[$(iv)$] there exists at least one covariate $k$ such that $\delta_k + \rho\beta_k \neq 0$
+\end{enumerate}
+Then:
+\begin{enumerate}
+    \item[$(i)$] If $\mat{I}$, $\mat{G}$, and $\mat{G}^2$ are linearly independent, then the parameters $\rho$, $\bm{\beta}$, and $\bm{\delta}$ are identified.
+    \item[$(ii)$] If $\mat{I}$, $\mat{G}$, and $\mat{G}^2$ are linearly dependent and no individual in the network is isolated, then $\rho$, $\bm{\beta}$, and $\bm{\delta}$ are not identified.
+\end{enumerate}
+\end{proposition}
+
+\begin{remark}
+We note that the result above is stated for the SARX model and concerns both the separation of endogenous and contextual effects. In Chapter~\ref{chap:model} we will not include standard linear contextual effects ($\bm{\delta} = \vect{0}$). Instead, we include the non-linear CoMO mechanism (Section~\ref{sec:bg:social_comparison}), capturing peer influence through social comparison instead of a linear effect of peer characteristics. The core IV identification logic of Proposition~\ref{prop:bramoulle} remains the same, and we still require the linear independence of $\mat{I}$, $\mat{G}$, and $\mat{G}^2$. We also develop alternative identification arguments based on the Gaussian likelihood in Chapter~\ref{chap:model}.
+\end{remark}
+
+\begin{proof}[Proof sketch]
+We provide a proof sketch focused on the conceptual aspects. For the complete proof, see \textcite[Proposition~1, p.~44]{Bramoulle2009}. For an identification proof along similar lines, adapted to the particular model used in this thesis, see Chapter~\ref{chap:model}.
+
+The main idea of the proof is to show how the network structure provides valid (relevant and exogenous) \emph{excluded instruments}. $\mat{G}\vect{y}$ is the problematic term for identification, and we focus on it in this sketch.
+
+Start by considering the reduced form of the SARX model:
+\begin{equation}
+    \label{eq:reduced_sarx}
+    \vect{y} = (\mat{I} - \rho\mat{G})^{-1}(\mat{X}\bm{\beta} + \mat{G}\mat{X}\bm{\delta}) + (\mat{I} - \rho\mat{G})^{-1}\vect{\varepsilon}
+\end{equation}
+
+Under $|\rho| < 1$ we can expand the terms using the Neumann series $(\mat{I} - \rho\mat{G})^{-1} = \sum_{k=0}^{\infty}\rho^k\mat{G}^k$ (see Section~\ref{sec:bg:sar}). We then get that $\mat{G}\vect{y}$ depends on $\mat{G}\mat{X}$, $\mat{G}^2\mat{X}$, $\mat{G}^3\mat{X}$, etc., which can be considered potential instruments.
+
+Consider the instrument $\mat{G}^2\mat{X}$ (which can be interpreted as the characteristics of friends-of-friends). The instrument satisfies both relevance and exogeneity:
+
+\begin{itemize}
+    \item \textbf{Relevance}: $\mat{G}^2\mat{X}$ is correlated with $\mat{G}\vect{y}$. This can be seen through Equation~\eqref{eq:reduced_sarx} when applying the Neumann expansion. The term is relevant as friends-of-friends' characteristics can affect friends' outcomes, which in turn enter $\mat{G}\vect{y}$.
+    \item \textbf{Exogeneity}: $\mat{X}$ is exogenous by assumption, and $\mat{G}$ is treated as fixed (exogenous), so that $\E[\vect{\varepsilon} \mid \mat{X}, \mat{G}] = \vect{0}$. Thus, $\mat{G}^2\mat{X}$ is uncorrelated with $\vect{\varepsilon}$, and $\mat{G}^2\mat{X}$ is exogenous.
+\end{itemize}
+
+We further need three conditions to hold for these instruments to be able to provide identifying variation. First, we require $\mat{X}$ to contain non-trivial exogenous regressors. If this does not hold, and the only regressor is an intercept, the row-normalisation of $\mat{G}$ implies $\mat{G}^k\vect{1} = \vect{1}$. In this case, the network lags $\mat{G}\mat{X}$, $\mat{G}^2\mat{X}$, $\ldots$ provide no new variation. Second, to not have the social effects cancel out in the reduced form, we need at least one covariate $k$ such that $\delta_k + \rho\beta_k \neq 0$. Third, to provide new variation $\mat{G}^2\mat{X}$ cannot be a linear combination of $\mat{X}$ and $\mat{G}\mat{X}$. This is ensured by the linear independence of $\mat{I}$, $\mat{G}$, and $\mat{G}^2$.
+
+Linear independence will rarely fail with realistic networks. In cases where the network has some special structure (if, for example, everyone is connected to everyone, or the network is bipartite), it may fail. In these special cases, friends-of-friends might be the same as friends, or follow a distinct pattern that does not provide new identifying variation.
+\end{proof}
+
+%% Section 2.6: Maximum Likelihood Estimation
+\section{Maximum Likelihood Estimation}
+\label{sec:bg:mle}
+This section contains background theory on maximum likelihood (ML) estimation. This thesis adapts ML theory to SAR models with network observations, which contain likelihoods that need to account for Jacobian terms. In Chapters~\ref{chap:estimation} and~\ref{chap:monte_carlo} we apply this theory to derive and validate estimators. The theory covered starts with general ML theory, the score function, information matrix, and asymptotic properties \parencite{Casella2002}. Next, we cover two techniques used in Chapter~\ref{chap:estimation}: the profile likelihood for reducing the dimension of ML optimisation, and the change-of-variables formula, applied in likelihood derivations. We then move on to specific ML theory for SAR models, where the Jacobian resulting from a change-of-variables is the key component \parencite{LeSage2009, Lee2004}. We end with theory on testing and transformation of derived estimators.
+
+We begin by covering foundational ML theory and components in general terms. Consider a random sample $\vect{Y} = (Y_1, \ldots, Y_n)$ with the joint density $f(\vect{y}; \thetavec)$, parametrised by the vector $\thetavec \in \Theta \subseteq \RR^p$. We then define the likelihood function and the log-likelihood as follows:
+\begin{align}
+    L(\thetavec) &= f(\vect{Y}; \thetavec) \\
+    \ell(\thetavec) &= \log L(\thetavec)
+\end{align}
+
+Under independent observations we can factor the joint density. This makes the likelihood a product of densities, and the log-likelihood takes the form of a sum: $\ell(\thetavec) = \sum_{i=1}^n \log f(Y_i; \thetavec)$. For our applications with SAR models in Chapter~\ref{chap:estimation} we do not have independent observations due to the spatial lag. However, we will still be able to write the likelihood in closed form through an application of the change-of-variables formula (Section~\ref{sec:bg:change_of_variables}).
+
+The maximum likelihood estimator (MLE) is defined as:
+\begin{equation}
+    \hat{\thetavec}_{\text{MLE}} = \arg\max_{\thetavec \in \Theta} \ell(\thetavec)
+\end{equation}
+
+Thus, with the sample $\vect{Y} = (Y_1, \ldots, Y_n)$, the maximum likelihood estimator finds the parameters of the density function that maximise the likelihood of the observed sample. In practice, we might not know the true underlying distribution. Thus, the quality of the MLE will in general depend on the distributional assumption made on the observations.
+
+\subsection{Score, Information, and the Hessian}
+
+We now cover some commonly used functions based on the likelihood, following the treatment in \textcite[Sec.~7.3.2, pp.~335--338]{Casella2002}.
+
+We begin with the \emph{score function}, which is defined as the gradient of the log-likelihood:
+\begin{equation}
+    \vect{S}(\thetavec) = \frac{\partial \ell(\thetavec)}{\partial \thetavec}
+\end{equation}
+
+As the MLE $\hat{\thetavec}$ maximises the log-likelihood, as long as $\hat{\thetavec}$ is in the interior of $\Theta$, the score satisfies the first-order condition $\vect{S}(\hat{\thetavec}) = \vect{0}$. Under certain regularity conditions, the property $\E[\vect{S}(\thetavec_0)] = \vect{0}$ holds, where $\thetavec_0$ is the true parameter value \parencite[p.~336, Eq.~(7.3.8)]{Casella2002}.
+
+Using the score function, we can now define the \emph{Fisher information matrix}, which is the variance of the per-observation score. Writing $\vect{s}_i(\thetavec) = \partial \log f(x_i \mid \thetavec)/\partial \thetavec$ as the contribution of observation $i$, we have
+\begin{equation}
+    \mathcal{I}(\thetavec) = \Var[\vect{s}_i(\thetavec)] = \E[\vect{s}_i(\thetavec)\vect{s}_i(\thetavec)^\top]
+\end{equation}
+The full-sample information is then given by $n\mathcal{I}(\thetavec)$ when observations are i.i.d.
+
+Under certain regularity conditions, in particular the interchange of differentiation and integration, an identity known as the \emph{information matrix equality} holds. The identity relates the curvature of the log-likelihood to the precision of the score, and says that we can write the Fisher information using the Hessian of the log-likelihood as \parencites[Lemma~7.3.11, p.~338]{Casella2002}[Sec.~5.5, p.~63]{vanderVaart1998}:
+\begin{equation}
+\label{eq:information_hessian}
+    \mathcal{I}(\thetavec) = -\E\!\left[\frac{\partial^2 \log f(x_i \mid \thetavec)}{\partial\thetavec\,\partial\thetavec^\top}\right]
+\end{equation}
+
+For complex models it can in practice be very difficult to calculate a closed form for the expected information $\mathcal{I}(\thetavec_0)$. Instead, using the negative Hessian of the full log-likelihood $-\mat{H}(\thetavec) = -\partial^2 \ell / \partial\thetavec\,\partial\thetavec^\top$ evaluated at the MLE we get the \emph{observed information matrix} \parencite[Sec.~10.1.3, p.~473]{Casella2002}:
+\begin{equation}
+\label{eq:observed_info}
+    \hat{\mathcal{I}}_n(\hat{\thetavec}) = -\frac{\partial^2 \ell}{\partial\thetavec\,\partial\thetavec^\top} \bigg|_{\thetavec=\hat{\thetavec}} = -\mat{H}(\hat{\thetavec})
+\end{equation}
+which estimates the full-sample information $n\mathcal{I}(\thetavec_0)$.
+
+Under standard regularity conditions, the observed information is a consistent estimator of the full-sample Fisher information. We can calculate standard errors (SE) for the MLE through the inverse of the observed information:
+\begin{equation}
+\label{eq:mle_se}
+    \widehat{\text{SE}}(\hat{\theta}_j) = \sqrt{[\hat{\mathcal{I}}_n(\hat{\thetavec})^{-1}]_{jj}}
+\end{equation}
+
+A requirement for these standard errors to be valid is that the observed information matrix must be positive definite at the MLE\@. At a proper local maximum of the log-likelihood this is fulfilled, as here the Hessian is negative definite, and hence $\hat{\mathcal{I}}_n = -\mat{H}$ is positive definite.
+
+\subsection{Asymptotic Properties}
+
+We briefly note some asymptotic properties of the MLE\@. Under regularity conditions, the MLE is both consistent and asymptotically normal. We state the asymptotic normality result as a theorem.
+
+\begin{theorem}[Asymptotic Normality of MLE, {\textcite[Thm.~10.1.12, p.~472]{Casella2002}}]
+\label{thm:mle_asymptotic}
+Suppose:
+\begin{enumerate}
+    \item[$(i)$] $\thetavec_0$ lies in the interior of $\Theta$, the parameter space
+    \item[$(ii)$] the model is identifiable
+    \item[$(iii)$] the log-likelihood is three times continuously differentiable in $\thetavec$, with an integrable function dominating its third-order partial derivatives in a neighbourhood of $\thetavec_0$
+    \item[$(iv)$] the Fisher information $\mathcal{I}(\thetavec_0)$ is positive definite
+\end{enumerate}
+The full assumption list is given in \textcite[Misc.~10.6.2, p.~516, conditions (A1)--(A6)]{Casella2002}. See also \textcite[Thm.~5.39 and the conditions of Thm.~5.41, pp.~65--68]{vanderVaart1998}. Under these, the MLE is asymptotically normal:
+\begin{equation}
+    \sqrt{n}(\hat{\thetavec}_{\text{MLE}} - \thetavec_0) \dto \N(\vect{0},\, \mathcal{I}(\thetavec_0)^{-1})
+\end{equation}
+Here, $\mathcal{I}(\thetavec_0)$ is the Fisher information matrix evaluated at the true parameter.
+\end{theorem}
+
+Theorem~\ref{thm:mle_asymptotic} also implies that the MLE asymptotically achieves the \emph{Cram\'er--Rao lower bound}. This means that no unbiased estimator exists with a smaller asymptotic variance than the MLE \parencite[Thm.~7.3.9, p.~335]{Casella2002}. We say that the MLE is \emph{asymptotically efficient}.
+
+\subsection{Profile Likelihood}
+\label{sec:bg:profile_likelihood}
+We now cover the profile likelihood technique, which can ease computations by reducing the dimensionality of ML optimisation.
+
+The technique can be applied when the parameter vector $\thetavec$ can be partitioned as $\thetavec = (\thetavec_1, \thetavec_2)$ and we are interested primarily in one of the components (we let this be $\thetavec_1$). Then, $\thetavec_2$ is commonly called the vector of nuisance parameters. The profiling technique consists of \emph{concentrating out} (or \emph{profiling out}) the nuisance parameters $\thetavec_2$. What this means is that, if feasible, we can solve analytically for the optimal $\thetavec_2$ as a function of $\thetavec_1$. Doing this reduces the dimension of the numerical optimisation, as we can then optimise only for $\thetavec_1$ and afterwards insert the result into the profiled function (profile MLE) for $\thetavec_2$ \parencite[Sec.~3.1.1, p.~48]{LeSage2009}.
+
+Formally, with $\ell(\thetavec_1, \thetavec_2)$ as the full likelihood, we define the profile MLE for $\thetavec_2$ as:
+\begin{equation}
+    \hat{\thetavec}_2(\thetavec_1) = \arg\max_{\thetavec_2} \ell(\thetavec_1, \thetavec_2)
+\end{equation}
+Based on this, the \emph{profile} (or \emph{concentrated}) \emph{log-likelihood} is the likelihood attained from the substitution:
+\begin{equation}
+    \ell^c(\thetavec_1) = \ell(\thetavec_1, \hat{\thetavec}_2(\thetavec_1))
+\end{equation}
+
+What makes this technique useful is that maximising $\ell^c(\thetavec_1)$ over $\thetavec_1$ yields the same MLE as the joint maximisation of $\ell(\thetavec_1, \thetavec_2)$ over both components. This follows from the fact that the profile substitution does not change the location of the global maximum. Instead, it just evaluates $\thetavec_2$ at its conditional optimum for each $\thetavec_1$.
+
+For our applications with the SAR model in Chapter~\ref{chap:estimation} the technique is especially useful, as we will be able to profile out both the linear parameters $\bm{\beta}$ and the variance $\sigma^2$. This yields one-dimensional optimisation problems that allow for stable and fast computation of the MLE\@.
+
+\subsection{Change of Variables for Random Vectors}
+\label{sec:bg:change_of_variables}
+To derive the likelihood functions in Chapter~\ref{chap:estimation} we make use of the change-of-variables formula. We need this to find the density of $\vect{y}$, as SAR models define $\vect{y}$ implicitly through $(\mat{I} - \rho\mat{G})\vect{y} = \mat{X}\bm{\beta} + \vect{\varepsilon}$. Here, $\vect{\varepsilon}$ has a known distribution. The multivariate change-of-variables formula describes how to transform from one density to another:
+
+\begin{theorem}[Multivariate Change of Variables, {\textcite[Eq.~(4.6.7), p.~185]{Casella2002}}]
+\label{thm:change_of_variables}
+We let $\vect{\varepsilon} \in \RR^n$ be a random vector with known density $f_{\vect{\varepsilon}}$. We let $\vect{y}$ depend on $\vect{\varepsilon}$ via $\vect{h}$ through $\vect{y} = \vect{h}(\vect{\varepsilon})$. Here, $\vect{h}$ is a differentiable bijection with inverse function $\vect{\varepsilon} = \vect{g}(\vect{y})$. Then $\vect{y}$ has density:
+\begin{equation}
+\label{eq:change_of_variables}
+    f_{\vect{y}}(\vect{y}) = f_{\vect{\varepsilon}}(\vect{g}(\vect{y})) \cdot \left|\det\!\left(\frac{\partial \vect{g}}{\partial \vect{y}^\top}\right)\right|
+\end{equation}
+Here, $\partial \vect{g} / \partial \vect{y}^\top$ is the Jacobian matrix of the transformation.
+\end{theorem}
+
+For our purposes with SAR models, the relevant transformation is the linear map $\vect{\varepsilon} = (\mat{I} - \rho\mat{G})\vect{y} - \mat{X}\bm{\beta}$. The Jacobian matrix of the transformation is $\partial\vect{\varepsilon}/\partial\vect{y}^\top = \mat{I} - \rho\mat{G}$ with determinant $|\det(\mat{I} - \rho\mat{G})|$. In the log-likelihood for the SAR we thus obtain a term $\log|\det(\mat{I} - \rho\mat{G})|$.
+
+We also derive two results for differentiation of this term, which will be applied repeatedly in Chapter~\ref{chap:estimation} for computing gradients and Hessians.
+
+\begin{lemma}[Derivative of Log-Determinant, {\textcite[Eq.~(43), p.~8]{PetersenPedersen2012}}]
+\label{lem:logdet_deriv}
+We let $\mat{A}(\theta)$ be an invertible matrix that depends on a scalar parameter $\theta$. Then:
+\begin{equation}
+\label{eq:logdet_deriv}
+    \frac{\partial}{\partial \theta} \log|\det \mat{A}(\theta)| = \tr\!\left[\mat{A}(\theta)^{-1} \frac{\partial \mat{A}(\theta)}{\partial \theta}\right]
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+By the chain rule, $\frac{\partial}{\partial \theta} \log|\det\mat{A}(\theta)| = \frac{1}{\det \mat{A}(\theta)}\frac{\partial}{\partial \theta} (\det\mat{A}(\theta))$. Now, a direct application of Jacobi's formula, $\frac{\partial}{\partial \theta}\det\mat{A} = \det(\mat{A})\,\tr[\mat{A}^{-1} \frac{\partial \mat{A}}{\partial \theta}]$ \parencite[Eq.~(46), p.~8]{PetersenPedersen2012}, gives the result.
+\end{proof}
+
+\begin{lemma}[Derivative of Matrix Inverse, {\textcite[Eq.~(59), p.~9]{PetersenPedersen2012}}]
+\label{lem:matinv_deriv}
+We let $\mat{A}(\theta)$ be an invertible matrix that depends on a scalar parameter $\theta$. Then:
+\begin{equation}
+\label{eq:matinv_deriv}
+    \frac{\partial \mat{A}^{-1}(\theta)}{\partial \theta} = -\mat{A}^{-1}(\theta)\frac{\partial \mat{A}(\theta)}{\partial \theta}\mat{A}^{-1}(\theta)
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Consider the identity $\mat{A}(\theta)\mat{A}^{-1}(\theta) = \mat{I}$. We differentiate each side with respect to $\theta$, and get $\frac{\partial \mat{A}(\theta)}{\partial \theta}\mat{A}^{-1}(\theta) + \mat{A}(\theta)\frac{\partial \mat{A}^{-1}(\theta)}{\partial \theta} = \mat{0}$. We solve for $\frac{\partial \mat{A}^{-1}}{\partial \theta}$, which gives the wanted result.
+\end{proof}
+
+\subsection{ML for SAR Models}
+
+We now consider the SAR model in particular, and discuss the key points of applying ML to this model. We will do this in full detail in Chapter~\ref{chap:estimation}, following the procedure laid out in this section. Here we also give the theory behind asymptotic results that we will use to retrieve standard errors and hypothesis tests in Chapter~\ref{chap:estimation}, which are validated in Chapter~\ref{chap:monte_carlo}.
+
+When applying ML to SAR models, we need to account for the fact that the spatial lag $\mat{G}\vect{y}$ creates dependence across observations. Under general conditions, the asymptotic properties of MLE for SAR models are established by \textcite[Thm.~3.2, p.~1906]{Lee2004}.
+
+We now consider the SAR model $\vect{y} = \rho\mat{G}\vect{y} + \mat{X}\bm{\beta} + \vect{\varepsilon}$, which has $\vect{\varepsilon} \sim \N(\vect{0}, \sigma^2\mat{I})$. If we write $\vect{\varepsilon} = (\mat{I} - \rho\mat{G})\vect{y} - \mat{X}\bm{\beta}$ we can apply the change-of-variables Theorem~\ref{thm:change_of_variables} (this is done in detail in Chapter~\ref{chap:estimation}), to get the log-likelihood \parencite[Sec.~3.1.1, pp.~47--48]{LeSage2009}:
+\begin{equation}
+\label{eq:sar_loglik}
+    \ell(\rho, \bm{\beta}, \sigma^2) = \log\det(\mat{I} - \rho\mat{G}) - \frac{n}{2}\log(2\pi\sigma^2) - \frac{1}{2\sigma^2}(\vect{y} - \rho\mat{G}\vect{y} - \mat{X}\bm{\beta})^\top(\vect{y} - \rho\mat{G}\vect{y} - \mat{X}\bm{\beta})
+\end{equation}
+The absolute value from the change-of-variables formula can be dropped as $\det(\mat{I} - \rho\mat{G}) > 0$ by Proposition~\ref{prop:det_positive}.
+
+Here, the key difference from a standard regression likelihood is the log-Jacobian term $\log\det(\mat{I} - \rho\mat{G})$ coming from the change-of-variables, as seen in Section~\ref{sec:bg:change_of_variables}. Without this term, we could maximise the likelihood to get the standard ordinary least squares (OLS) estimator. However, the OLS estimator ignores the simultaneity in $\vect{y}$ coming from the spatial lag, which the log-Jacobian term corrects for. In practice, the log-determinant presents a computational challenge, and creates a need for efficient methods (such as exploitation of eigenvalue decompositions or sparse structures of $\mat{I} - \rho\mat{G}$) when $\mat{G}$ is large \parencite[pp.~237--241]{Pace1997}.
+
+We end this section with the asymptotic results of \textcite[Thm.~3.2, p.~1906; Assumptions 1--8, pp.~1902--1904]{Lee2004}, who shows that MLE for the SAR model is both consistent and asymptotically normal under regularity conditions. With $\thetavec = (\rho, \bm{\beta}^\top, \sigma^2)^\top$:
+\begin{equation}
+    \sqrt{n}(\hat{\thetavec} - \thetavec_0) \dto \N(\vect{0},\, \mathcal{I}(\thetavec_0)^{-1})
+\end{equation}
+The conditions needed for this to hold are the following: the true parameter lies in the interior of the parameter space, $\mat{G}$ has uniformly bounded row and column sums, and the model is correctly specified. The results of \textcite[Thm.~3.2 and Sec.~4]{Lee2004} also extend to quasi-maximum likelihood estimation, with consistency holding even when relaxing the normality assumption on $\vect{\varepsilon}$, although this comes at the cost of losing guarantees of efficiency.
+
+\subsection{Wald Tests}
+\label{sec:bg:asymptotic}
+We now cover some theory for hypothesis testing through Wald tests. In Chapter~\ref{chap:estimation} we use this theory to develop tests for the CoMO and network effects of our model, and Chapter~\ref{chap:monte_carlo} provides validation by running these tests.
+
+The asymptotic normality of the MLE (Theorem~\ref{thm:mle_asymptotic}) can be used together with the Wald principle to construct hypothesis tests \parencite[Sec.~10.3.2, p.~493]{Casella2002}. The idea of the Wald principle is to use a test statistic based on comparing the estimated parameter value to its hypothesised value under $H_0$, with scaling through the estimated standard error.
+
+To test a single parameter, we can use the Wald test statistic:
+\begin{equation}
+    t = \frac{\hat{\theta}_j - \theta_{0,j}}{\widehat{\text{SE}}(\hat{\theta}_j)}
+\end{equation}
+By the asymptotic normality of the MLE and Slutsky's theorem, it follows that under $H_0: \theta_j = \theta_{0,j}$, $t \dto \N(0, 1)$ as $n \to \infty$.
+
+We also define the more general Wald statistic for joint testing of $q$ linear restrictions. For $p$ parameters in $\thetavec$, this can be formulated as $H_0: \mat{R}\thetavec = \vect{r}$ where $\mat{R}$ is a $q \times p$ matrix of restrictions and $\vect{r}$ is a vector of constants of length $q$. We then have the following:
+
+\begin{definition}[Wald Statistic, {\textcite[Sec.~16.2, p.~231]{vanderVaart1998}}]
+The Wald statistic for testing $H_0: \mat{R}\thetavec = \vect{r}$ is:
+\begin{equation}
+    W = (\mat{R}\hat{\thetavec} - \vect{r})^\top [\mat{R}\hat{\mat{V}}\mat{R}^\top]^{-1} (\mat{R}\hat{\thetavec} - \vect{r})
+\end{equation}
+where $\hat{\mat{V}} = \hat{\mathcal{I}}_n(\hat{\thetavec})^{-1}$ is the estimated covariance matrix of $\hat{\thetavec}$.
+\end{definition}
+
+For this statistic, we have that under $H_0$, $W \dto \chi^2_q$ as $n \to \infty$ \parencite[Sec.~16.2, p.~231]{vanderVaart1998}. Using this test for a single restriction ($q = 1$) would reduce the Wald statistic to $W = t^2$ where $t$ is the single-parameter test statistic. This test based on $\chi^2_1$ is equivalent to comparing $|t|$ to the standard normal critical value.
+
+\subsection{The Delta Method}
+\label{sec:bg:delta_method}
+In Chapter~\ref{chap:estimation} the parametrisation of our model will give us direct access to standard errors for the estimated parameters after fitting the model. However, sometimes one might be interested in the standard errors of functions of estimated parameters, such as the standard deviation in our model. The delta method can be used to achieve this, as it is a method for finding asymptotic distributions of smooth transformations of asymptotically normal estimators. We state the method as a theorem.
+
+\begin{theorem}[Delta Method, {\textcite[Thm.~5.5.24, p.~243]{Casella2002}}]
+\label{thm:delta_method}
+Let $\hat\theta_n$ be a sequence of estimators that satisfy $\sqrt{n}(\hat\theta_n - \theta_0) \dto \N(0, v^2)$. Let $g: \RR \to \RR$ be a function that is differentiable at $\theta_0$, with $g'(\theta_0) \neq 0$. Then,
+\begin{equation}
+\label{eq:delta_method}
+    \sqrt{n}\bigl(g(\hat\theta_n) - g(\theta_0)\bigr) \dto \N\bigl(0,\, [g'(\theta_0)]^2 \, v^2\bigr)
+\end{equation}
+\end{theorem}
+
+%% Section 2.7: Instrumental Variables and Two-Stage Least Squares
+\section{Instrumental Variables and Two-Stage Least Squares}
+\label{sec:bg:iv}
+We now move on to the second estimation technique applied in this thesis: two-stage least squares (2SLS). Here, we provide background theory on 2SLS and instrumental variables (IV) estimation. We begin by introducing the endogeneity problem, move on to how instrumental variables work, and end with core concepts and diagnostics of the 2SLS estimator \parencite[Ch.~4]{Angrist2009}. In Chapter~\ref{chap:estimation} we will apply all these concepts in a full development of 2SLS estimators for our model, including diagnostic tests and formulas for standard errors.
+
+\subsection{The Endogeneity Problem}
+
+We begin by explaining the endogeneity problem, which motivates the use of 2SLS over standard OLS regression.
+
+To do this, consider a linear model of the form:
+\begin{equation}
+\label{eq:iv_model}
+    \vect{y} = \mat{W}\bm{\delta} + \vect{\varepsilon}, \qquad \E[\vect{\varepsilon}] = \vect{0}
+\end{equation}
+where $\mat{W}$ is the $n \times k$ matrix of regressors. Now, we say that a regressor in $\mat{W}$ is \emph{endogenous} if it is correlated with the error term: $\E[\mat{W}^\top\vect{\varepsilon}] \neq \vect{0}$. In the presence of an endogenous regressor, the standard OLS estimator $\hat{\bm{\delta}}_{\text{OLS}} = (\mat{W}^\top\mat{W})^{-1}\mat{W}^\top\vect{y}$ is no longer consistent: $\hat{\bm{\delta}}_{\text{OLS}} \not\pto \bm{\delta}_0$. Thus, endogeneity requires alternative methods for estimation.
+
+In the SAR model, we have endogeneity through the spatial lag regressor $\mat{G}\vect{y}$. From the reduced form~\eqref{eq:reduced_form} we can see that $\mat{G}\vect{y}$ depends on the errors $\vect{\varepsilon}$. In particular, we have that $(\mat{G}\vect{y})_i$ is the weighted average of outcomes $y_j$ for $j \in N_i$. Each $y_j$ depends on $\varepsilon_j$ directly through the SAR equation~\eqref{eq:sar_basic}. Through the network $\mat{G}$, $y_j$ also depends on $\varepsilon_i$ when $i$ and $j$ are connected. Thus, $\E[(\mat{G}\vect{y})_i \cdot \varepsilon_i] \neq 0$, $\mat{G}\vect{y}$ is endogenous, and we cannot apply OLS to the SAR model.
+
+\subsection{Instrumental Variables}
+
+The endogeneity problem can be solved through the instrumental variables approach, which addresses endogeneity by finding key variables $\mat{Z}$ called instruments. For this to work, the instruments need to be correlated with the endogenous regressors, but uncorrelated with the error term.
+
+We give a setup for defining valid instruments based on the linear model~\eqref{eq:iv_model}, following the standard treatment \parencite[Sec.~4.1]{Angrist2009}. When instruments are valid they can be used to successfully estimate coefficients for endogenous regressors. We first partition the regressors $\mat{W} = [\mat{W}_1, \mat{W}_2]$ into the $k_1$ exogenous regressors $\mat{W}_1$ and the $k_2$ endogenous regressors $\mat{W}_2$ where $k = k_1 + k_2$. Then we define the $n \times m$ ($m \geq k$) matrix of instruments $\mat{Z}$.
+
+\begin{definition}[Valid Instruments, {\textcite[Sec.~4.1]{Angrist2009}}]
+\label{def:valid_instruments}
+The instrument matrix $\mat{Z}$ is valid if it has the following properties:
+\begin{enumerate}
+    \item \textbf{Relevance}: $\E[\mat{Z}^\top\mat{W}]$ has full column rank $k$. This is required to ensure that the instruments contain sufficient information to predict the endogenous regressors.
+    \item \textbf{Exogeneity}: $\E[\mat{Z}^\top\vect{\varepsilon}] = \vect{0}$. This is required to ensure that the instruments are uncorrelated with the error term.
+\end{enumerate}
+\end{definition}
+
+To provide enough valid instruments for model identification and estimation, we require the instrument matrix $\mat{Z}$ to include all the exogenous regressors $\mat{W}_1$ (which are their own instruments) in addition to at least $k_2$ instruments, called \emph{excluded instruments}, that are themselves not direct regressors in~\eqref{eq:iv_model}. If we have $m > k$, i.e., there are more instruments than regressors, we say that the model is \emph{overidentified}. This allows us to use the additional instruments to test instrument validity, as will be done in Chapter~\ref{chap:estimation}.
+
+\subsection{Two-Stage Least Squares}
+
+The 2SLS estimator is a way to solve the endogeneity problem when valid instruments are available, through a two-stage procedure \parencite[Eq.~(4.1.9), p.~122]{Angrist2009}. For the first stage, we project the endogenous regressors onto the instrument space. The result of the first stage is that the endogenous regressors are replaced with fitted values that use only exogenous variation under valid instruments. Now, for the second stage, the outcome is regressed on the projected regressors from the first stage. The resulting estimator is consistent under valid instruments, though finite-sample bias may remain.
+
+By \textcite[Sec.~4.2.1]{Angrist2009} the 2SLS estimator is consistent and asymptotically normal when standard regularity conditions hold and instruments are valid. Compared to the MLE, 2SLS is more flexible when it comes to the distributional assumption. Instead of relying on a distributional assumption on $\vect{\varepsilon}$, it only uses the moment conditions $\E[\mat{Z}^\top\vect{\varepsilon}] = \vect{0}$, making it more robust to distributional misspecification. However, the MLE is generally efficient when the distributional assumption holds, while 2SLS is not.
+
+\subsection{Properties and Diagnostics}
+\label{sec:bg:iv_diagnostics}
+We end this theory section with three diagnostic tests that should be applied when using 2SLS\@. We will apply these diagnostics in full detail for our model in Chapter~\ref{chap:estimation} with Monte Carlo simulation validation provided in Chapter~\ref{chap:monte_carlo}.
+
+\subsubsection{Weak Instruments and the First-Stage $F$-Statistic}
+
+We start with the first-stage $F$-statistic test, which allows us to test for \emph{weak instruments}. By weak instruments, we mean instruments that are weakly correlated with the endogenous regressors. When this is the case, the 2SLS estimator is less stable and can exhibit large bias in finite-sample settings. Weak instruments can also lead to poor confidence interval (CI) coverage and unreliable standard errors \parencite[p.~557]{Staiger1997}. Hence, weak instruments are an important consideration when using 2SLS estimation.
+
+The first-stage $F$-statistic lets us test for weak instruments by testing whether the coefficients on the excluded instruments are jointly zero. This is done during the first-stage regression when the endogenous regressors are regressed on the full instrument set. When there are $q$ excluded instruments and $m$ total instruments, the statistic is the following:
+\begin{equation}
+\label{eq:first_stage_f}
+    F = \frac{(RSS_r - RSS_u)/q}{RSS_u/(n - m)}
+\end{equation}
+where $RSS_r$ and $RSS_u$ denote the residual sums of squares from the restricted (without excluded instruments) and unrestricted regressions, respectively. When the null hypothesis that the excluded instruments have zero coefficients holds, we have that $F \sim F_{q, n-m}$.
+
+A common rule of thumb, due to \textcite[p.~557]{Staiger1997}, is to interpret a first-stage $F$-statistic under 10 as signalling potentially weak instruments. \textcite[Table~1]{StockYogo2005} provide more formal critical values to check, based on maximal relative bias and size distortion. When the statistic falls below this threshold, the instruments may be too weak for reliable inference.
+
+\subsubsection{Overidentification Test (Sargan--Hansen $J$-Test)}
+
+The Sargan--Hansen $J$-test can be used when we have a model that is overidentified, meaning we have more excluded instruments than endogenous regressors \parencite{Sargan1958, Hansen1982}. The test comes from the more general framework of generalised method of moments, of which 2SLS is a special case. The test validates instruments by exploiting the fact that instruments should yield similar parameter estimates when valid. This can only be applied under overidentification, as we need extra instruments to be able to do the comparison. If there is systematic or strong disagreement between instruments, this indicates that at least one instrument is invalid.
+
+The Sargan--Hansen $J$-test statistic is \parencite[Sec.~4.2.2, pp.~141--146]{Angrist2009}:
+\begin{equation}
+\label{eq:sargan_hansen}
+    J = n \cdot \frac{\hat{\vect{\varepsilon}}^\top\mat{Z}(\mat{Z}^\top\mat{Z})^{-1}\mat{Z}^\top\hat{\vect{\varepsilon}}}{\hat{\vect{\varepsilon}}^\top\hat{\vect{\varepsilon}}}
+\end{equation}
+Here, $\hat{\vect{\varepsilon}}$ are 2SLS residuals and $\mat{Z}$ is the instrument matrix. We let $m$ denote the number of instruments (columns of $\mat{Z}$). We have the null hypothesis $H_0$: All instruments are valid. When this holds, $J \dto \chi^2_{m-k}$ as $n \to \infty$, with $k$ the number of estimated parameters. When the test is rejected, we have evidence that at least one instrument is correlated with the error term, which is a violation of the exogeneity condition of Definition~\ref{def:valid_instruments}. We note that non-rejection of this test is necessary but not sufficient for instrument validity.
+
+\subsubsection{Hausman Test}
+
+The Hausman test \parencite{Hausman1978} uses a comparison of estimates found using OLS and 2SLS to test for the presence of endogeneity. We define the null hypothesis $H_0$: There is no endogeneity. Under this, we have that both OLS and 2SLS are consistent, but with OLS being more efficient. When endogeneity is present, only 2SLS is consistent. This is used to formulate the test.
+
+When we have a single endogenous regressor (like we will in our model of Chapter~\ref{chap:model}), with a corresponding coefficient $\gamma$, the test statistic reduces to:
+\begin{equation}
+\label{eq:hausman}
+    H = \frac{(\hat{\gamma}_{\text{2SLS}} - \hat{\gamma}_{\text{OLS}})^2}{\widehat{\Var}(\hat{\gamma}_{\text{2SLS}}) - \widehat{\Var}(\hat{\gamma}_{\text{OLS}})}
+\end{equation}
+Under $H_0$ we have that $H \dto \chi^2_1$ as $n \to \infty$. If the test is rejected, we have an indication of endogeneity, and the use of 2SLS over OLS is warranted. In practice, since we have finite samples, there might be situations where the statistic is undefined, as the difference between the variances in the denominator is not guaranteed to be positive.
+
+%% Section 2.8: Monte Carlo Simulation
+\section{Monte Carlo Simulation}
+\label{sec:bg:monte_carlo}
+In Chapter~\ref{chap:monte_carlo}, we will validate our estimators by applying Monte Carlo simulations. This section covers the background theory. We begin with the general theory, move on to discuss applications for validation of asymptotic theory, and end with the standard performance metrics which we will apply in Chapter~\ref{chap:monte_carlo}.
+
+When studying properties of statistical estimators, Monte Carlo simulation is perhaps the most widely used computational method. Through repeated random sampling it allows us to study the properties of statistical estimators on large samples \parencite{Robert2004, MorrisWhiteEtAl2019}. If we have a known DGP, known true parameters $\thetavec_0$, and an estimator we want to test, we can perform a Monte Carlo simulation as follows.
+
+With $R$ the number of replications:
+\begin{enumerate}
+    \item For $r = 1, \ldots, R$: Use the known DGP and true parameters $\thetavec_0$ to generate data $\mathcal{D}^{(r)}$.
+    \item For $r = 1, \ldots, R$: Apply the estimator to each dataset $\mathcal{D}^{(r)}$ to obtain estimates $\hat{\thetavec}^{(r)}$ and standard errors $\widehat{\text{SE}}^{(r)}$.
+    \item Compute needed summary statistics across the replications to assess estimator performance.
+\end{enumerate}
+
+When using a large number of replications $R$, the law of large numbers gives us that the Monte Carlo estimates of bias, variance, and other desired properties converge to their true values. In combination with the flexibility of being able to calculate performance metrics as needed, this makes Monte Carlo simulation a powerful tool for studying finite-sample properties.
+
+Asymptotic theory can often provide powerful results, like the guarantees of consistency and normality of the MLE and 2SLS estimators as $n \to \infty$ established in Sections~\ref{sec:bg:mle} and~\ref{sec:bg:iv}. In practice, we will always be applying these estimators to finite samples. To what extent does the asymptotic behaviour still apply in such settings? Using Monte Carlo simulations, we can investigate the gap between the finite-sample and asymptotic cases by varying our replication sample sizes \parencite{MorrisWhiteEtAl2019}.
+
+Monte Carlo simulations can reveal more than just the adequacy of asymptotic properties for realistic sample sizes. They can also give us insight into the magnitude and direction of finite-sample bias, as well as how well the standard errors (and confidence intervals built using them) are calibrated. Lastly, they allow us to investigate how different components of the DGP affect estimator performance, as we can compare Monte Carlo simulations run with different settings of the DGP\@. In this thesis, this is particularly relevant, as it allows us to investigate the influence of the network structure on the performance of our estimators.
+
+We end this section by covering standard performance metrics used in Monte Carlo studies, which we apply in Chapter~\ref{chap:monte_carlo}. Reporting all of these together creates a comprehensive picture of estimator performance.
+
+For each replication $r$ and parameter $\theta_j$ we let $\theta_{0,j}$ denote the true parameter value, and $\hat\theta_j^{(r)}$ the Monte Carlo estimate. Below we cover five commonly reported metrics, following \textcite[Sec.~5.2]{MorrisWhiteEtAl2019}, and add an additional diagnostic for assessing normality based on $z$-scores.
+
+\subsubsection{Bias}
+The bias of an estimator measures systematic deviation between the estimated parameter and the true value. Using Monte Carlo simulations, we calculate this as:
+\begin{equation}
+    \text{Bias}(\hat\theta_j) = \frac{1}{R}\sum_{r=1}^{R}\hat\theta_j^{(r)} - \theta_{0,j}
+\end{equation}
+If the estimator is consistent, the bias converges to zero as $n \to \infty$.
+
+\subsubsection{Standard Deviation}
+The standard deviation (Std) of an estimator measures the dispersion of the estimator across the replications. This is found as:
+\begin{equation}
+    \text{Std}(\hat\theta_j) = \sqrt{\frac{1}{R-1}\sum_{r=1}^{R}\left(\hat\theta_j^{(r)} - \overline{\hat\theta}_j\right)^2}
+\end{equation}
+
+\subsubsection{Root Mean Squared Error}
+The root mean squared error (RMSE) is a measure of estimator accuracy that combines both bias and variance (based on Std above). The formula is:
+\begin{equation}
+    \text{RMSE}(\hat\theta_j) = \sqrt{\text{Bias}^2 + \text{Std}^2}
+\end{equation}
+
+\subsubsection{Mean Estimated Standard Error}
+Mean estimated standard error is a metric that measures the average of the estimated standard errors across Monte Carlo replications:
+\begin{equation}
+    \overline{\text{SE}} = \frac{1}{R}\sum_{r=1}^{R}\widehat{\text{SE}}^{(r)}(\hat\theta_j)
+\end{equation}
+If we have standard errors that are correctly calibrated, we should observe $\overline{\text{SE}} \approx \text{Std}(\hat\theta_j)$.
+
+\subsubsection{Coverage}
+Coverage measures the correctness of confidence intervals by calculating the fraction of replications in which the nominal $(1-\alpha)$ confidence interval contains the true value:
+\begin{equation}
+    \text{Coverage} = \frac{1}{R}\sum_{r=1}^{R}\one\!\left\{
+    \hat\theta_j^{(r)} - z_{1-\alpha/2} \cdot \widehat{\text{SE}}^{(r)} \leq \theta_{0,j}
+    \leq \hat\theta_j^{(r)} + z_{1-\alpha/2} \cdot \widehat{\text{SE}}^{(r)}
+    \right\}
+\end{equation}
+Coverage should be approximately $(1-\alpha)$ when the standard errors are correctly calibrated and the asymptotic normal approximation holds. If the coverage is substantially below the nominal level, then the estimated standard errors are too small. If the coverage is far above the nominal level, then this indicates that we have overly conservative inference.
+
+\subsubsection{Standardised $z$-Scores}
+The final metrics covered are the standardised $z$-scores, which we can use to verify asymptotic normality. They are computed as:
+\begin{equation}
+\label{eq:mc_zscore_def}
+    z_j^{(r)} = \frac{\hat\theta_j^{(r)} - \theta_{0,j}}{\widehat{\text{SE}}^{(r)}(\hat\theta_j)}
+\end{equation}
+Under asymptotic normality, these should be approximately distributed as $\N(0, 1)$.

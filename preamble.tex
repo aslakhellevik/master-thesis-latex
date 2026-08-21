@@ -1,0 +1,130 @@
+%% Preamble: Packages, Settings, and Custom Commands
+
+%% Encoding and Language
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{babel}
+\usepackage{textcomp}
+\usepackage{url}
+\urlstyle{sf}
+
+%% UiO Packages
+\usepackage{uiomasterfp}    % Front page
+
+%% Mathematics
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}      % Extensions to amsmath
+\usepackage{bm}             % Bold math symbols (\bm{})
+\usepackage{dsfont}         % Double-stroke font (\mathds{1} for indicator)
+
+%% Tables and Figures
+\usepackage{booktabs}       % Professional tables (\toprule, \midrule, \bottomrule)
+\usepackage{graphicx}       % Include graphics
+\usepackage{float}          % Better float placement [H]
+\usepackage{array}          % Extended column types
+
+% Path to figures and UiO templates
+\graphicspath{{figures/}{uio-templates/}}
+
+%% Algorithms
+\usepackage{xcolor}         % Colours (needed by hyperref)
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+%% Bibliography
+\usepackage{csquotes}       % Recommended by biblatex for smart quote handling
+\usepackage[
+    style=authoryear,
+    backend=biber,
+    maxcitenames=2,
+    maxbibnames=99,
+    uniquename=false,
+    uniquelist=false
+]{biblatex}
+\addbibresource{references.bib}
+
+%% Add comma between author and year in citations
+\renewcommand*{\nameyeardelim}{\addcomma\space}
+
+%% Cross-References and Hyperlinks
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!70!black,
+    citecolor=green!50!black,
+    urlcolor=blue!70!black,
+    pdfauthor={Aslak Hellevik},
+    pdftitle={Network Effects of Social Media Use on Well-Being}
+}
+
+\usepackage[nameinlink, capitalise, noabbrev]{cleveref}
+
+%% Theorem Environments
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{assumption}{Assumption}[chapter]
+\newtheorem{example}[theorem]{Example}
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+%% Cleveref names for assumptions
+\crefname{assumption}{Assumption}{Assumptions}
+\Crefname{assumption}{Assumption}{Assumptions}
+
+%% Custom Commands: Vectors and Matrices
+\newcommand{\vect}[1]{\bm{#1}}              % Vectors: bold italic
+\newcommand{\mat}[1]{\mathbf{#1}}           % Matrices: bold upright
+\renewcommand{\vec}[1]{\vect{#1}}           % Override default \vec
+
+%% Custom Commands: Probability and Statistics
+\newcommand{\E}{\mathbb{E}}                 % Expectation
+\newcommand{\Var}{\operatorname{Var}}       % Variance
+\newcommand{\Cov}{\operatorname{Cov}}       % Covariance
+\newcommand{\N}{\mathcal{N}}                % Normal distribution
+\newcommand{\iid}{\stackrel{\text{iid}}{\sim}}  % iid symbol
+
+\newcommand{\pto}{\xrightarrow{p}}          % Convergence in probability
+\newcommand{\dto}{\xrightarrow{d}}          % Convergence in distribution
+
+%% Custom Commands: Linear Algebra
+\newcommand{\tr}{\operatorname{tr}}         % Trace
+\newcommand{\rank}{\operatorname{rank}}     % Rank
+\newcommand{\diag}{\operatorname{diag}}     % Diagonal
+
+%% Custom Commands: Number Sets
+\newcommand{\RR}{\mathbb{R}}                % Real numbers
+
+%% Custom Commands: Model-Specific Notation
+% SMU averages
+\newcommand{\sbar}{\bar{s}}                 % Average SMU of peers
+\newcommand{\ybar}{\bar{y}}                 % Average WB of peers
+
+% Key matrices
+\newcommand{\Ay}{\mat{A}_y}                 % I - gamma_3 G
+\newcommand{\As}{\mat{A}_s}                 % I - beta_1 G
+
+% Parameter vectors
+\newcommand{\thetavec}{\bm{\theta}}         % Generic parameter vector
+\newcommand{\gammavec}{\bm{\gamma}}         % Gamma parameters
+
+% Indicator function
+\newcommand{\one}{\mathds{1}}               % Indicator function
+
+%% Miscellaneous Settings
+% Prevent widows and orphans
+\widowpenalty=10000
+\clubpenalty=10000
+
+% Better spacing in equations
+\allowdisplaybreaks
+
+% Equation numbering by chapter
+\numberwithin{equation}{chapter}
+

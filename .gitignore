@@ -1,0 +1,159 @@
+# LaTeX auxiliary files
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+.*.lb
+
+# LaTeX intermediate files
+*.dvi
+*.xdv
+*-converted-to.*
+
+# Bibliography auxiliary files
+*.bbl
+*.bcf
+*.blg
+*-blx.aux
+*-blx.bib
+*.run.xml
+
+# Build tool auxiliary files
+*.fdb_latexmk
+*.synctex
+*.synctex(busy)
+*.synctex.gz
+*.synctex.gz(busy)
+*.pdfsync
+
+# Build folders
+out/
+
+# Glossaries
+*.acn
+*.acr
+*.glg
+*.glo
+*.gls
+*.glsdefs
+*.lzo
+*.lzs
+*.slg
+*.slo
+*.sls
+
+# Indexes
+*.alg
+*.idx
+*.ilg
+*.ind
+
+# Nomenclature
+*.nlg
+*.nlo
+*.nls
+
+# Listings
+*.lol
+
+# Makeindex
+*.maf
+*.mlf
+*.mlt
+*.mtc[0-9]*
+*.slf[0-9]*
+*.slt[0-9]*
+*.stc[0-9]*
+
+# Minitoc
+*.mw
+
+# Hyperref
+*.brf
+
+# Knitr
+*-concordance.tex
+
+# Beamer
+*.nav
+*.pre
+*.snm
+*.vrb
+
+# Changes
+*.soc
+
+# Comment
+*.cut
+
+# Enumitem
+*.ent
+
+# Fixme
+*.lox
+
+# Todonotes
+*.tdo
+
+# Xindy
+*.xdy
+
+# Gnuplottex
+*-gnuplottex-*
+
+# Glossaries
+*.glstex
+
+# Minted
+_minted*
+*.pyg
+
+# TikZ & PGF
+*.figlist
+*.makefile
+*.dpth
+*.md5
+*.auxlock
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.iml
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+tmpclaude-*
+compile.log
+.claude/

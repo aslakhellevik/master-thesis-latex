@@ -1,0 +1,94 @@
+%% Master's Thesis: Network Effects of Social Media Use on Well-Being
+%% University of Oslo - Department of Mathematics
+%% This is the master document.
+%% Individual chapters are in the chapters/ folder.
+
+%% Add UiO templates folder to LaTeX search path
+\makeatletter
+\def\input@path{{uio-templates/}}
+\makeatother
+
+\documentclass[UKenglish]{uiomasterthesis}
+
+%% Load preamble (packages, commands, settings)
+\input{preamble}
+
+%% Document Metadata
+\title{Network Effects of Social Media Use on Well-Being}
+\subtitle{From Agent-Based Models to Statistical Inference}
+\author{Aslak Hellevik}
+
+%% Begin Document
+\begin{document}
+
+%% Front Page (UiO official format)
+\uiomasterfp[
+    program={SMR: Statistics},
+    long,                           
+    supervisors={Tobias Dahl \& Ingrid Hobæk Haff},
+    colour=green,
+    date={Spring 2026}
+]
+
+%% Front Matter
+\frontmatter
+
+% Abstract
+\input{frontmatter/abstract}
+
+% Acknowledgements
+\input{frontmatter/acknowledgements}
+
+% Declaration of AI usage
+\input{frontmatter/ai_declaration}
+
+% Table of contents, list of figures, list of tables
+\setcounter{tocdepth}{1}
+\raggedbottom
+\tableofcontents
+\listoffigures
+\listoftables
+\flushbottom
+
+% Abbreviations
+\input{frontmatter/notation}
+
+%% Main Matter
+\mainmatter
+
+% Chapter 1: Introduction
+\include{chapters/ch1_introduction}
+
+% Chapter 2: Background Theory
+\include{chapters/ch2_background}
+
+% Chapter 3: Agent-Based Model Investigation
+\include{chapters/ch3_abm_investigation}
+
+% Chapter 4: The Recursive CoMO Model
+\include{chapters/ch4_recursive_model}
+
+% Chapter 5: Estimation of the Recursive CoMO Model
+\include{chapters/ch5_estimation}
+
+% Chapter 6: Monte Carlo Study
+\include{chapters/ch6_monte_carlo}
+
+% Chapter 7: The Simultaneous CoMO Model
+\include{chapters/ch7_simultaneous}
+
+% Chapter 8: Discussion and Conclusion
+\include{chapters/ch8_discussion_and_conclusion}
+
+%% Back Matter
+\backmatter
+
+% Bibliography
+\printbibliography[heading=bibintoc]
+
+%% Appendices
+\appendix
+
+\include{appendices/appA_code_documentation}
+
+\end{document}

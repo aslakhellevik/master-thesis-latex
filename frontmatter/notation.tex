@@ -1,0 +1,95 @@
+%% Notation and Abbreviations
+
+\chapter*{Notation}
+\addcontentsline{toc}{chapter}{Notation}
+\markboth{Notation}{Notation}
+
+We list recurring notation. Symbols that are chapter-specific are generally omitted. This list focuses on widely reused, model-specific, or potentially confusing notation. Standard statistical notation (such as $\N(\mu, \sigma^2)$) is used in the traditional sense. We also use bold italic lowercase $\vect{x}$ for vectors and bold upright uppercase $\mat{X}$ for matrices.
+
+\subsubsection*{Replication counts}
+\noindent\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.65\textwidth}@{}}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$M$ & Number of ABM scenario replications (Ch.~\ref{chap:abm}) \\
+$R$ & Number of parametric Monte Carlo replications (Ch.~\ref{chap:monte_carlo}, Ch.~\ref{chap:simultaneous}) \\
+\bottomrule
+\end{tabular}
+
+\subsubsection*{Model variables and network structure}
+\noindent\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.65\textwidth}@{}}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$N_i$ & Set of neighbours of individual $i$ \\
+$\mat{G}$ & Row-normalised adjacency matrix \\
+$\bar{x}_i = {(\mat{G}\vect{x})}_i$ & Adjacency-weighted neighbour mean of $x$ at individual $i$ \\
+\midrule
+$s_i$, $y_i$ & SMU and WB of individual $i$ in the cross-sectional models \\
+$s_{it}$, $y_{it}$ & SMU and WB of individual $i$ at time $t$ in the ABM simulations \\
+$c_i = \max(0,\sbar_i - s_i)$ & CoMO term for individual $i$ \\
+$\vect{u}$, $\vect{\varepsilon}$ & Error vectors of the SMU and WB equations \\
+\bottomrule
+\end{tabular}
+
+\subsubsection*{Core model parameters}
+\noindent\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.65\textwidth}@{}}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$\beta_0$ & Baseline SMU intercept \\
+$\beta_1$ & Peer conformity in the SMU equation \\
+$\beta_2$ & Feedback WB$\to$SMU in the simultaneous CoMO model (Ch.~\ref{chap:simultaneous}) \\
+$\gamma_0$ & Baseline WB intercept \\
+$\gamma_1$ & Direct effect of own SMU on WB \\
+$\gamma_2$ & CoMO effect on WB \\
+$\gamma_3$ & Peer WB effect \\
+$\sigma_u^2$, $\sigma_\varepsilon^2$ & Error variances of the SMU and WB equations \\
+\bottomrule
+\end{tabular}
+
+\subsubsection*{Matrices used in estimation}
+\noindent\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.55\textwidth}@{}}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$\As = \mat{I} - \beta_1\mat{G}$ & SMU equation coefficient matrix \\
+$\Ay = \mat{I} - \gamma_3\mat{G}$ & WB equation coefficient matrix \\
+$\mat{D} = \diag(d_i)$, $d_i = \one[\sbar_i > s_i]$ & CoMO indicator matrix (Ch.~\ref{chap:simultaneous}) \\
+$\mat{\Gamma} = \gamma_1\mat{I} + \gamma_2\mat{D}(\mat{G} - \mat{I})$ & Composite SMU-effect matrix in the WB equation (Ch.~\ref{chap:simultaneous}) \\
+\bottomrule
+\end{tabular}
+
+\chapter*{Abbreviations}
+\addcontentsline{toc}{chapter}{Abbreviations}
+\markboth{Abbreviations}{Abbreviations}
+
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.68\textwidth}@{}}
+\toprule
+\textbf{Abbreviation} & \textbf{Meaning} \\
+\midrule
+2SLS & Two-Stage Least Squares \\
+ABM & Agent-Based Model \\
+AR(1) & First-Order Autoregressive \\
+CI & Confidence Interval \\
+CoMO & Cost of Missing Out \\
+DGP & Data-Generating Process \\
+ESS & Effective Sample Size \\
+FIML & Full Information Maximum Likelihood \\
+FOMO & Fear of Missing Out \\
+HC1 & Heteroskedasticity-Consistent Standard Errors, Variant 1 \\
+IV & Instrumental Variables \\
+ML & Maximum Likelihood \\
+MLE & Maximum Likelihood Estimator \\
+OLS & Ordinary Least Squares \\
+RCT & Randomised Controlled Trial \\
+RMSE & Root Mean Squared Error \\
+SAR & Spatial Autoregressive \\
+SARX & Spatial Autoregressive with Exogenous Covariates \\
+SE & Standard Error \\
+SEM & Structural Equation Model \\
+SMU & Social Media Use \\
+SUTVA & Stable Unit Treatment Value Assumption \\
+WB & Well-Being \\
+\bottomrule
+\end{tabular}

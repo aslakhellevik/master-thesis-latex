@@ -1,0 +1,185 @@
+%% Chapter 1: Introduction
+
+\chapter{Introduction}
+\label{chap:introduction}
+%% Section 1.1: Motivating Research Question
+\section{Motivating Research Question}
+\label{sec:intro:motivation}
+Since the introduction of the smartphone into our daily lives in the early 2010s, there has been a substantial growth in daily screen time among teenagers \parencite{Twenge2018}. Along with this came the introduction of various social media platforms, with a substantial portion of teenagers' daily screen time spent on these platforms \parencite{Twenge2018}. Thus, social media use (SMU) has become a central part of young people's social lives. Throughout this thesis, SMU refers to daily time spent on platforms where the dynamics are based on user-generated content and peer interaction. Examples are Instagram, TikTok, and Facebook. The daily time spent can be self-reported or tracked in other ways. In parallel to this development, there have been worrying trends in the mental health of adolescents. Compared to 2012, teenagers in many developed countries are more anxious, depressed, and lonely \parencite{Twenge2018, Haidt2024}.
+
+The coexistence of these rising trends has caused both scientific and public debate around the question of whether social media use is harmful \parencite{Valkenburg2022}. This is the motivating research question for this thesis:
+
+\begin{quote}
+\emph{What is the causal influence of social media use on well-being?}
+\end{quote}
+
+Despite years of research on this question, the research field is divided, lacking clear answers \parencite{Valkenburg2022}. In fact, the field seems to have split into different camps, with groups of researchers arguing for contradictory conclusions. Surprisingly, a lot of this contradictory research is based on similar or identical data. For example, \textcite{Twenge2018} and \textcite{Orben2019} use overlapping datasets, but end up with different conclusions. Even well-designed studies seem to give varying results, as documented in recent reviews \parencite{Valkenburg2022}. In this thesis, we argue that a key reason for the difficulties and confusion of the field is neglect of taking \emph{network effects} into account. We argue that it is essential to include the possibility of peers' behaviour having an effect on individual outcomes, and that the lack of this in current research might explain some of its failures. The contribution of this thesis is to develop network-aware methods. We will not estimate the causal effect itself in this thesis.
+
+With the recent rise of screen time and mental health problems in adolescents, and concerns about long-term effects on both individual and societal scales, finding answers to this problem is urgent. Some countries have already implemented age-based policies on social media, with Australia restricting access for users under 16 since December 2025 \parencite[Part~4A]{AustraliaSMMinimumAge2024}. If using social media is harmful for well-being (WB), we might want to further regulate its use. If it is not, then regulation might restrict freedom and deprive adolescents of a social arena with benefits.
+
+\subsection{Evidence for harm}
+
+There are many researchers who argue that SMU has a negative effect on WB, particularly among teenagers. This section summarises some of the main arguments made by this camp's most prominent representatives.
+
+Jonathan Haidt is perhaps the most influential voice of this camp. In his book \emph{The Anxious Generation} \parencite{Haidt2024}, he collects evidence from multiple studies, and argues that they show an epidemic of mental illness among adolescents. He believes that social media has rewired childhood, making a new social reality among children and teenagers that is detrimental to mental health. In his book, he mentions several mechanisms that might explain this phenomenon: the move from a play-based to a phone-based childhood, sleep deprivation, less time to be social, and addiction through hyper-engaging design \parencite[Ch.~5]{Haidt2024}. He concludes that regulation is needed.
+
+Another strong proponent on the ``For Regulation'' side is Jean M. Twenge. In \textcite{Twenge2018}, they show how there has been a sharp decline in well-being among American adolescents after 2012, and connect this to the same time period when smartphones became widespread. They also find that adolescents spending more time on screens report lower well-being. In an article written for the public, she draws on such results to argue for a higher minimum age for social media platforms \parencite{Twenge2025WaPo}.
+
+The main argument of the camp that wants more regulation points to the parallel increases in smartphone adoption and social media use on the one hand, and mental health problems among adolescents on the other. The camp finds the two to be connected, and points to cross-sectional evidence of negative associations as in \textcite{Twenge2018} and to experimental studies showing increased WB when deactivating social media \parencite{Allcott2019}. Being convinced that there is such a relationship, the camp argues for regulation accordingly.
+
+\subsection{Evidence of negligible effects}
+
+On the other side of the debate, there are researchers who believe that the causal effect of SMU on WB is negligible or non-existent.
+
+In \textcite[pp.~173, 178]{Orben2019}, a prominent paper from this camp, Orben and Przybylski investigate the relationship between the use of digital technology and well-being among adolescents. Their conclusion is that the use of digital technology does not explain more than $0.4\%$ of the variation in well-being, an effect size they find comparable to that of wearing glasses or eating potatoes.
+
+Meta-studies have also been performed, such as \textcite[p.~58]{Valkenburg2022}, which collected evidence from 25 reviews (which include seven meta-analyses) on SMU and mental health in adolescents. The conclusion was that the evidence only shows ``weak'' or ``inconsistent'' associations between SMU and WB\@. They also find uncertainty at the level of individual differences, where some might be harmed and some might benefit from higher SMU\@.
+
+The camp arguing against regulation criticises the methodology used by researchers like Haidt and Twenge. In \textcite{Odgers2020}, they argue that much of the evidence in the field relies on correlational studies that are not suitable for establishing causal conclusions. Other researchers argue that the temporal correspondence between the mental health decline and increased phone use might be coincidental, and that the mental health decline might be caused by other societal changes such as economic inequality, academic pressure, or climate anxiety \parencite{McGorry2025}.
+
+\subsection{The Missing Piece: Network Effects}
+
+This thesis argues that both camps in the SMU--WB debate are missing an essential methodological piece: network effects. In the statistical methods used by the camps, as in \textcite{Twenge2018}, \textcite{Orben2019}, and \textcite[p.~6]{Allcott2019}, individuals are assumed to be independent units, whose WB is only allowed to depend on their own SMU, and not that of others.
+
+We believe that by ignoring the \emph{social} component, the research on social media makes an assumption that is too strong to yield trustworthy answers. Consider a regular young user of social media. If all their friends use platform ``Popular'', the user would incur a cost if they were absent from the platform. They would lose out on social information, and perhaps feel excluded. To assume no effect on individual well-being from network effects, in the area of research on what are essentially social networks, is a very strong assumption. While the use of such an assumption might seem surprising, the fact that it is made is understandable. Almost all standard statistical methods used in this type of empirical research, such as cross-sectional regression and randomised experiments, rely on this assumption. Thus, to move away from this assumption requires moving away from the standard statistical tools of the field, which is not a simple task. However, due to the nature of the topic of research, we believe it is necessary.
+
+To be more specific about the problematic aspect of this: the neglect of network effects leads to the following statistical problems when estimating using standard research methods:
+
+\begin{enumerate}
+    \item \textbf{Endogeneity}: Peer outcomes affect individual outcomes and vice versa, creating effects that are not modelled in standard methods, leading to biased estimates.
+    \item \textbf{Relative effects}: Differences between individual and group behaviour might be more important than absolute levels, but standard methods estimate absolute effects and ignore relative effects.
+    \item \textbf{Spillovers}: When conducting experiments, network effects might lead to spillovers from treated groups into the wider network, breaking with experimental assumptions needed for valid causal inference.
+\end{enumerate}
+
+In this thesis, we develop a model that explicitly accounts for network effects, including a term for the \emph{cost of missing out} (CoMO) effect \parencite[Eqs.~1--2]{DahlFoldnesGronneberg2024}. This allows us to begin addressing these problems.
+
+%% Section 1.2: Measuring Well-Being
+\section{Measuring Well-Being}
+\label{sec:intro:wb_measurement}
+The concept of well-being is much debated, and hard to pinpoint. Measuring well-being is perhaps even harder than defining it, and there is a vast literature in both philosophy and psychology tackling these issues \parencite{Ryan2001, Diener1984, LayardDeNeve2023}. The literature often separates between concepts such as hedonic well-being (happiness, pleasure) and eudaimonic well-being (meaning, purpose), following the philosophical traditions of utilitarianism and Aristotelianism \parencite{Ryan2001}.
+
+In practice, researchers have used various methods of measuring well-being, including scales of life satisfaction, measures of emotional affect at given times, and composite measures combining multiple measures into one \parencite{Diener1984}. The most common approach might be the use of ``Cantril's ladder'' or ``Cantril's Self-Anchoring Scale'' \parencite[p.~22]{Cantril1965}. Here respondents are asked to rate their life on an $11$-point scale, from zero (worst possible life) to ten (best possible life). However, self-reported well-being can be ambiguous, as it might depend on what exactly is reported. In \textcite[Ch.~1]{Dolan2014} this is framed as the difference between the experiencing self and the evaluating self. Additionally, phenomena such as the Easterlin paradox illustrate that such ratings may also reflect comparisons to others rather than reflecting an absolute level \parencite[Sec.~3]{Easterlin1974}.
+
+In this thesis, we will not attempt to resolve any of the challenges related to the measuring of well-being, nor will we examine how different measures might lead to different conclusions in the SMU--WB literature. For our purposes, we will simply assume that a standardised, continuous measure in the range $[0, 10]$ is available, and we will let this represent well-being. This thesis focuses on the statistical problems of the SMU--WB debate, and the methods developed are suitable for a range of measures of both SMU and WB\@.
+
+%% Section 1.3: Standard Methods and Network Effects
+\section{Standard Methods and Network Effects}
+\label{sec:intro:causal}
+In the SMU--WB research, a wide array of methodological approaches is employed. But can these standard methods handle network effects appropriately? This section considers standard methods and their fit for modelling network effects. We place a specific focus on cross-sectional surveys as an example of an observational approach, panel studies with fixed effects as an example of a longitudinal approach, and randomised controlled trials as an example of an experimental approach. These are some of the most common approaches used in SMU--WB research.
+
+Different methods rely on different assumptions to support causal claims, and we will here look at the assumptions needed for these three methods. In Chapter~\ref{chap:abm} we will use agent-based model (ABM) simulations to show how all three methods exhibit bias under network effects, which shows the significance of the problem this thesis addresses.
+
+\subsection{Cross-Sectional Surveys}
+\label{sec:intro:cross_sectional}
+Cross-sectional studies are easy and inexpensive to perform, and are thus perhaps the best fit for accommodating large sample sizes. To perform a cross-sectional study on the effect of SMU on WB, researchers need to measure SMU and WB for a population of individuals at a single time point. Then, the results are most commonly analysed using an ordinary least squares (OLS) regression of WB on SMU, where we model WB (here $y_i$) as depending linearly on SMU (here $s_i$), with an error term ($\varepsilon_i$) assumed independent of $s_i$:
+
+\begin{equation}
+    y_i = \alpha + \beta s_i + \varepsilon_i
+    \label{eq:cross_sectional}
+\end{equation}
+Then, $\beta$ is interpreted as the effect of SMU on WB, assumed to be linear in use.
+
+\begin{assumption}[Cross-Sectional Exogeneity]
+    \label{ass:cross_sectional}
+    There are no omitted confounders: $\E[\varepsilon_i |  s_i] = 0$ \parencite[Eq.~4.3]{Wooldridge2010}.
+\end{assumption}
+
+In addition to the relational assumption inherent in Equation~\eqref{eq:cross_sectional}, cross-sectional surveys need Assumption~\ref{ass:cross_sectional} to correctly identify the parameters. In the presence of network effects, the relational assumption of Equation~\eqref{eq:cross_sectional} fails when peer comparison is present, as it omits peer SMU and peer WB as explanatory variables. Thus, if peer behaviour affects individual outcomes through a network, the estimated $\hat{\beta}$ will be biased.
+
+\subsection{Panel Studies with Fixed Effects}
+\label{sec:intro:panel}
+To estimate with fixed effects on panel studies, we need longitudinal data following a set of individuals over an extended time period, making measurements of SMU and WB at various times throughout the period. This is more resource-intensive than cross-sectional studies, but allows for more powerful results through being able to control for time-invariant confounders:
+\begin{equation}
+    y_{it} = \alpha_i + \beta s_{it} + \varepsilon_{it}
+    \label{eq:panel}
+\end{equation}
+Here, $\alpha_i$ absorbs time-invariant individual variation into an intercept, thus leaving only the time-varying characteristics for OLS estimation on the demeaned data. $y_{it}$, $s_{it}$, and $\varepsilon_{it}$ are the WB, SMU, and error term of individual $i$ at time $t$, respectively.
+
+\begin{assumption}[Panel Strict Exogeneity]
+    \label{ass:panel}
+    For identification we require \emph{strict exogeneity}: $\E[\varepsilon_{it} | s_{i1}, \ldots, s_{iT}, \alpha_i] = 0$ \parencite[Sec.~10.2.2]{Wooldridge2010}.
+\end{assumption}
+
+Fixed effects require a stronger independence assumption through Assumption~\ref{ass:panel}. However, this allows researchers to eliminate the bias from time-invariant confounders, which in the SMU--WB example could include personality traits or baseline mental health. Under network effects, this method will still exhibit bias. If peer SMU influences individual SMU or WB, we will have a time-varying confounder that this method cannot control for. The influence changes over time as peers' SMU and WB change, and is thus not captured by the model. This would lead to biased estimates.
+
+\subsection{Randomised Controlled Trials}
+\label{sec:intro:rct}
+Randomised controlled trials (RCTs) are an experimental approach considered to be ideal, or the gold standard, for causal inference \parencite[Ch.~2]{Angrist2009}. To perform an RCT, researchers perform a treatment on a randomly selected subset of a population. Each individual must be randomly assigned to either the treated group or the control group. The treatment, which in the SMU--WB question could be to reduce or limit SMU, is performed on the treated group. Data can then be collected on all individuals, and the effect of the treatment can be isolated using the control group for comparison. The power of the method comes from the randomisation, which cancels out selection bias by making the treated and control groups comparable across characteristics.
+
+After conducting the experiment, we can estimate the average treatment effect as:
+\begin{equation}
+    \hat{\tau} = \bar{y}^{\text{treated}} - \bar{y}^{\text{control}}
+\end{equation}
+In the SMU--WB example, we would here have $\bar{y}^{\text{treated}}$ as the average WB of the treated group (having their SMU reduced), and $\bar{y}^{\text{control}}$ as the average WB of the control group.
+
+If we want an effect comparable to the $\beta$ estimates produced by cross-sectional surveys or panel studies with fixed effects, we need to scale the average treatment effect to a one-unit change in SMU\@. We can do this by scaling with the difference in SMU between the two groups:
+\begin{equation}
+    \hat{\tau}_{\text{scaled}} = \frac{\bar{y}^{\text{treated}} - \bar{y}^{\text{control}}}{\bar{s}^{\text{treated}} - \bar{s}^{\text{control}}}
+    \label{eq:rct_scaled}
+\end{equation}
+Here, $\bar{s}^{\text{treated}}$ and $\bar{s}^{\text{control}}$ denote average SMU in the treated and control groups, respectively. The scaled estimator $\hat{\tau}_{\text{scaled}}$ now measures the estimated effect on WB of a one-unit change in SMU, which can be compared to the $\beta$ estimates of the previous methods. We note that this is the \emph{Wald estimator} from instrumental variables theory \parencite[Sec.~4.1.2]{Angrist2009}.
+
+\begin{assumption}[SUTVA]
+    \label{ass:sutva}
+    \textcite[p.~591]{Rubin1980} introduced the Stable Unit Treatment Value Assumption (SUTVA), which consists of two parts:
+    \begin{enumerate}
+        \item \textbf{No interference}: Individual outcomes depend only on the individual's own treatment status, not on others'.
+        \item \textbf{No hidden variations}: Treatment effects are well-defined in the sense that there is only one version of each treatment level.
+    \end{enumerate}
+\end{assumption}
+
+
+Assumption~\ref{ass:sutva} is what allows us to estimate the average treatment effect as the difference between mean outcomes between the two groups. When network effects are present, SUTVA is violated, in particular the ``no interference'' part of the assumption. This is because the treatment effect would spill over through the network effects, and thus affect the control group indirectly as well. The randomisation step of the RCT, which is supposed to provide the independence needed, would no longer work, because the network effects break the independence. In effect, because of treatment spillover, both groups will experience some of the treatment. Reducing SMU lowers the peer reference level, which will reduce the contrast between the two groups, and thus bias the average treatment effect towards zero. In Chapter~\ref{chap:abm} we demonstrate this bias through simulation.
+
+There exist other possible methodological approaches which we will not look at in detail here, as the three methods we cover are broad and commonly applied, and thus sufficient for our investigations and argument. An example is a design based on \emph{instrumental variables}, which we will return to in Chapter~\ref{chap:model}. Some approaches we will not go further into in this thesis are \emph{experience sampling methods}, which give a high number of samples per time unit, but still treat individuals as independent, and \emph{difference-in-differences} designs, which, similarly to RCTs, are biased by spillover of treatment effects when network effects are present. While the exact mechanisms of other approaches differ, they also have to deal with similar challenges to those faced by the methods we focus on.
+
+The problems described in this section all have in common that they are difficulties arising from network effects. \textcite[Sec.~2]{Manski1993} made a general formulation of what he called the \emph{reflection problem}: the difficulty of separately identifying endogenous peer effects (peer outcomes affecting individual outcomes), contextual effects (peer characteristics affecting individual outcomes), and correlated effects (common shocks among individuals of the same group).
+
+A solution to this problem based on exploiting variation in network structure has been developed by \textcite{Bramoulle2009}, and will be employed in this thesis. Under certain conditions, this approach uses the network structure itself as instruments for identification. In Chapter~\ref{chap:background} we discuss the theory behind the reflection problem and the network solution, which we build on and apply in Chapters~\ref{chap:model}--\ref{chap:estimation} to provide an identified model incorporating network effects.
+
+%% Section 1.4: Thesis Contributions
+\section{Thesis Contributions}
+\label{sec:intro:contributions}
+This thesis contributes to our understanding of methodological problems in the research of the influence of SMU on WB\@. It makes several methodological contributions that bring us closer to understanding the causal effect of SMU on WB\@. It does not, however, apply these methods to real data. Instead, it follows an arc from diagnosis using ABMs to model development with the CoMO term. We first model SMU and WB in the recursive CoMO model by allowing SMU to influence WB, but not vice versa. Then, the simultaneous CoMO model relaxes this assumption, allowing influence from WB to SMU as well. In order of presentation, the thesis makes the following novel contributions:
+
+\begin{enumerate}
+    \item \textbf{ABM Demonstration of Bias and Simpson's Paradox} (Chapter~\ref{chap:abm}):
+          We use ABMs to simulate network effects, and show how this leads to a failure in estimation of causal effects when applying standard research methods. The methods tested are cross-sectional OLS, panel data with fixed effects, and randomised controlled trials. We also show how Simpson's Paradox can arise under a delayed-decline mechanism, with sign reversal of cross-sectional estimates relative to the true causal effect.
+
+    \item \textbf{The Recursive CoMO Model} (Chapter~\ref{chap:model}):
+          We develop a formalisation of the CoMO concept, introduced in the SMU--WB context by \textcite[Eqs.~1--2]{DahlFoldnesGronneberg2024}. The term is introduced in our recursive CoMO model through an asymmetric, non-linear specification $c_i = (\sbar_i - s_i)^+$ which compares individual SMU to an adjacency-weighted peer reference. We prove identification for this model under the inclusion of this non-linear term.
+
+    \item \textbf{Maximum Likelihood Estimation} (Chapter~\ref{chap:estimation}):
+          We derive the complete likelihood functions and analytical Hessian matrices for both equations of the recursive CoMO model. We also develop Wald tests for the CoMO and network effects.
+
+    \item \textbf{Two-Stage Least Squares Estimation} (Chapter~\ref{chap:estimation}):
+          We exploit network structures to produce two-stage least squares (2SLS) estimators for the WB equation of the recursive CoMO model, following \textcite{Bramoulle2009}. For the SMU equation we show that 2SLS is not feasible under our model specification.
+
+    \item \textbf{Monte Carlo Validation} (Chapter~\ref{chap:monte_carlo}):
+          We use Monte Carlo simulations to verify the analytical Hessians and validate the asymptotic properties of the estimators developed in Chapter~\ref{chap:estimation}. We also perform a sensitivity analysis, showing that maximum likelihood (ML) is preferable to 2SLS for dense networks due to weak instruments.
+
+    \item \textbf{The Simultaneous CoMO Model and FIML Estimator} (Chapter~\ref{chap:simultaneous}):
+          We extend the recursive CoMO model to allow feedback from WB to SMU, and develop a full information maximum likelihood (FIML) estimator for the resulting simultaneous system. We prove existence and uniqueness of the equilibrium via the Banach fixed-point theorem, derive the FIML likelihood with a computationally efficient Jacobian determinant identity, and provide an initial Monte Carlo validation showing that the estimator recovers all parameters with low bias and well-calibrated standard errors.
+\end{enumerate}
+
+%% Section 1.5: Thesis Outline
+\section{Thesis Outline}
+\label{sec:intro:outline}
+We give an outline of the thesis with a short description of each chapter below. The thesis follows a common thread from problem identification to solution, ending with a discussion and potential paths for future research.
+
+\begin{description}
+    \item[Chapter~\ref{chap:background}] provides background theory for the ABM simulations of Chapter~\ref{chap:abm}, as well as the recursive CoMO model developed in Chapters~\ref{chap:model}--\ref{chap:monte_carlo}. It contextualises the research question and gives the foundations of the methods applied and built upon in this thesis.
+
+    \item[Chapter~\ref{chap:abm}] employs ABM simulations to show that many standard research methods are biased in the presence of network effects. It also illustrates Simpson's Paradox for the SMU--WB case. The results in this chapter motivate the need for the models developed in subsequent chapters.
+
+    \item[Chapter~\ref{chap:model}] gives a formal introduction of the recursive CoMO model. Taking network effects into consideration, this model does not exhibit the same problem of network omission we found in Chapter~\ref{chap:abm}. The chapter also shows that the model is identified and establishes the theoretical framework used for estimation.
+
+    \item[Chapter~\ref{chap:estimation}] develops both maximum likelihood and two-stage least squares estimators for the recursive CoMO model. It includes full derivations of the analytical Hessian.
+
+    \item[Chapter~\ref{chap:monte_carlo}] uses Monte Carlo simulations to validate the estimators of Chapter~\ref{chap:estimation}. It also performs a sensitivity analysis for both network density and sample size.
+
+    \item[Chapter~\ref{chap:simultaneous}] extends the recursive CoMO model to the simultaneous CoMO model, proving equilibrium uniqueness under an explicit contraction condition and developing its own additional theory as needed rather than relying on Chapter~\ref{chap:background}. It derives the FIML likelihood, provides Monte Carlo validation, and investigates the bias from ignoring the simultaneous feedback term.
+
+    \item[Chapter~\ref{chap:discussion_conclusion}] discusses the results and concludes the thesis. It synthesises the findings, connects the ABM simulations and the analytical methods, considers implications for SMU and WB research, discusses limitations, and outlines future research.
+\end{description}
+

@@ -1,0 +1,14 @@
+
+%% Abstract
+
+\begin{abstract}
+
+Most empirical research on the relationship between social media use (SMU) and well-being (WB) does not model network effects on individual outcomes. This thesis shows that this omission can bias causal estimates and develops statistical methods for network-aware inference to address this gap. The thesis is methodological, and the methods are not applied to real data.
+
+Agent-based models are applied as a bottom-up approach to simulate networked agent behaviour. Cross-sectional ordinary least squares, panel fixed effects, and randomised controlled trials are all shown to produce biased estimates when applied to data with underlying networked dynamics. This motivates explicit network modelling.
+
+We develop the recursive CoMO model, a cross-sectional structural model with network effects, and formalise the \emph{cost of missing out} (CoMO) concept introduced in the SMU--WB context by \textcite{DahlFoldnesGronneberg2024} as a novel non-linear term capturing asymmetric peer comparison. This model lets an individual's WB depend both on their own SMU and on the \emph{relative} difference between their own and their peers' SMU\@. We derive maximum likelihood estimators and analytical Hessian matrices for the SMU and WB equations, and a two-stage least squares estimator for the latter. Monte Carlo simulations provide evidence of low bias and near-nominal confidence interval coverage.
+
+The model is extended to the simultaneous CoMO model with feedback from WB to SMU\@. Using Banach's fixed-point theorem, we prove existence and uniqueness of the equilibrium under a contraction condition, and derive a full information maximum likelihood estimator. The estimator's properties are validated in an initial Monte Carlo simulation.
+
+\end{abstract}

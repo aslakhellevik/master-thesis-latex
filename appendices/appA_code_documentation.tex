@@ -1,0 +1,173 @@
+%% Appendix A: Computational Details and Numerical Verification
+
+\chapter{Computational Details and Numerical Verification}
+\label{app:code}
+This appendix contains additional details for the simulations of Chapters~\ref{chap:abm},~\ref{chap:monte_carlo}, and~\ref{chap:simultaneous}, along with implementation details and a numerical verification of the analytical Hessians for the estimators of Chapter~\ref{chap:estimation}. These details were either omitted from the main text for brevity or are specific to the code implementation. The goal of the appendix is to clarify how each step of the simulations was performed.
+
+The code for the project was written in Python \parencite{Python313}, and is available from the author on request. Detailed version numbers and packages are provided in Table~\ref{tab:code_packages}.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption[Python packages and versions used for the thesis code]{Python packages and version numbers used for the thesis code. The code was run with Anaconda Python 3.13.5.}
+\label{tab:code_packages}
+\begin{tabular}{lll}
+\toprule
+Package & Version & Usage \\
+\midrule
+\texttt{numpy} \parencite{Harris2020NumPy}           & 2.3.2   & Linear algebra, random number generation \\
+\texttt{scipy} \parencite{Virtanen2020SciPy}         & 1.16.1  & Sparse linear algebra, optimisation \\
+\texttt{pandas} \parencite{McKinney2010Pandas}       & 2.3.2   & Tabular data handling \\
+\texttt{matplotlib} \parencite{Hunter2007Matplotlib} & 3.10.5  & Plotting \\
+\texttt{networkx} \parencite{Hagberg2008NetworkX}    & 3.6.1   & Graph construction \\
+\texttt{joblib} \parencite{Joblib2025}               & 1.5.2   & Monte Carlo parallelisation (\texttt{loky} backend) \\
+\texttt{tqdm} \parencite{Tqdm2024}                   & 4.67.1  & Progress bars \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+We use \texttt{numpy.random.default\_rng} throughout the thesis code to generate random numbers. To make Monte Carlo replications independent and reproducible in Chapters~\ref{chap:monte_carlo} and~\ref{chap:simultaneous}, we use an outer \texttt{SeedSequence} that generates an independent child seed per replication. For the Monte Carlo simulation of Chapter~\ref{chap:abm}, we assign each replication the seed $\texttt{base\_seed} + r$ for $r = 0, 1, \ldots, M-1$ (see Section~\ref{app:code:abm} below).
+
+\section{Agent-Based Simulations (Chapter~\ref{chap:abm})}
+\label{app:code:abm}
+For the parameter values for the three main scenarios, see Table~\ref{tab:abm_main_params}. For the initialisation of agent attributes, we use the priors in Section~\ref{sec:abm:attributes} together with the clipping bounds in Table~\ref{tab:abm_agent_init}.
+
+\begin{table}[htbp]
+\centering
+\caption[Agent parameter initialisation]{Agent parameter initialisation.}
+\label{tab:abm_agent_init}
+\begin{tabular}{llc}
+\toprule
+Parameter & Sampling & Clipping \\
+\midrule
+$\mu^y$ & $\N(6.0, 1.0)$ & $[3.0, 9.0]$ \\
+$\sigma^y$ & $\N(1.0, 0.1)$ & $[0.1, 1.5]$ \\
+$\mu^s$ & $\N(3.0, 0.2)$ & $[1.0, 8.0]$ \\
+$\sigma^s$ & $\N(0.2, 0.1)$ & $[0.1, 1.5]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Additionally, we document the following implementation details. We use the agent's initial $\sigma^s_i$ as the per-step innovation standard deviation for $\varepsilon^s_{it}$. We clip the $\eta \cdot \hat{\beta}_{it}$ part of the learning update to $[-1, 1]$ (after the main text $[-5, 5]$ clipping), and the updated SMU target $\mu^s_i$ to $[1, 15]$. These safeguards rarely activate, but are included to ensure stability near the edges of the parameter space. When we generate Erd\H{o}s--R\'enyi networks for the Network~\&~CoMO scenario, we check that each agent has at least one neighbour. Any agent with no neighbours is connected to another randomly chosen agent to ensure that each row of $\mat{G}$ has at least one non-zero entry. As noted in the main text, the allowed ranges for SMU and WB are $[0, 16]$ and $[0, 10]$, respectively. The values are clipped accordingly throughout the simulations. The Monte Carlo simulation of this chapter runs for $M = 250$ replications per scenario. For the reference, CoMO, and Network~\&~CoMO scenarios, we use base seeds $1{,}000$, $2{,}000$, and $3{,}000$, respectively. This ensures that the scenarios do not share randomness.
+
+Lastly, in addition to the parameter values in Table~\ref{tab:abm_simpsons_params}, the Simpson's Paradox demonstration of Section~\ref{sec:abm:simpsons} uses the fixed seed $7$. Instead of the hard clipping applied in the scenarios above, it uses a smooth (tanh-based) mapping to avoid discontinuities. This ensures that the kernel-based delayed-decline mechanism of Equation~\eqref{eq:delayed_decline} is not disrupted by sharp boundary effects.
+
+\begin{table}[htbp]
+\centering
+\caption[Parameter values for Simpson's Paradox]{Parameter values for Simpson's Paradox.}
+\label{tab:abm_simpsons_params}
+\begin{tabular}{llc}
+\toprule
+Parameter & Description & Value \\
+\midrule
+$n$ & Number of agents & 500 \\
+$T$ & Number of days & 1{,}000 \\
+$\phi$ & SMU persistence & 0.7 \\
+$\gamma_1$ & SMU$\to$WB coefficient & $-0.5$ \\
+$\gamma_2$ & CoMO$\to$WB coefficient & $-0.8$ \\
+$\eta$ & Learning rate & 0.1 \\
+$\alpha_r$ & Reward scale & 0.5 \\
+$\alpha_p$ & Penalty scale & 0.05 \\
+$\tau_f$ & Fast (reward) timescale & 1.0 \\
+$\tau_s$ & Slow (penalty) timescale & 15.0 \\
+$H$ & Effect window (days) & 15 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Recursive ML and 2SLS (Chapters~\ref{chap:estimation}--\ref{chap:monte_carlo})}
+\label{app:code:recursive}
+In Sections~\ref{sec:est:screen_ml} and~\ref{sec:est:wb_ml}, the concentrated likelihoods reduce the maximum likelihood optimisation to one-dimensional problems. We have bounds on $\beta_1$ and $\gamma_3$, and apply bounded one-dimensional optimisation (\texttt{scipy.optimize.minimize\_scalar} with \texttt{method="bounded"}) on the interval $[-0.99,\, 0.99]$ in both cases, using \texttt{xatol = 1e-8}. This ensures that $\As$ and $\Ay$ remain invertible, as the interval is inside the open stability region $(-1, 1)$. When the one-dimensional optimisation is complete, the other parameters are recovered analytically as described in Chapter~\ref{chap:estimation}.
+
+In the calculation of the analytical standard errors, the computational bottleneck comes from the term $-\tr\!\bigl((\Ay^{-1}\mat{G})^2\bigr)$ in the analytical Hessian of the WB equation (see Section~\ref{sec:est:wb_hessian}). In the code, we evaluate this by explicitly forming $\Ay^{-1}$, which is the $O(n^3)$ step referenced in Section~\ref{sec:est:computational}. The analytical Hessians are cross-checked against a four-point central-difference approximation. See Section~\ref{app:code:hessian} for details on the full comparison.
+
+In the density study of Section~\ref{sec:mc:density}, we verify the Bramoull\'e identification criterion by checking that the $n^2 \times 3$ matrix whose columns are the vectorisations of $\mat{I}$, $\mat{G}$, and $\mat{G}^2$ has rank three.
+
+The Monte Carlo simulations validating estimators in Chapter~\ref{chap:monte_carlo} use the design specified in Section~\ref{sec:mc:design}, with draws of networks and error vectors based on the seeding scheme above. We run $R = 1{,}000$ replications for the main study of Section~\ref{sec:mc:ml}, and $R = 500$ for the density study of Section~\ref{sec:mc:density} and the convergence study of Section~\ref{sec:mc:convergence}. The outer seeds for the three studies are $42$, $100$, and $300$, respectively. For the Wald-test size study of Section~\ref{sec:mc:wald}, we use outer seed $42$ for the replications under the null DGP\@. In each replication, we draw Erd\H{o}s--R\'enyi networks until we obtain one with no isolates. We apply parallelisation across all available CPU cores using \texttt{joblib} with the \texttt{loky} backend.
+
+\section{Hutchinson's Stochastic Trace Estimator}
+\label{app:code:hutchinson}
+As a reference for model applications to larger networks, we describe how to apply Hutchinson's stochastic trace estimator in practice. In Section~\ref{sec:est:computational} we discussed this option, but we did not use it in the Monte Carlo simulations of the thesis, as direct computation of the trace was feasible.
+
+The estimator makes use of the identity
+\begin{equation}
+    \tr[\mat{M}] = \E[\vect{v}^\top\mat{M}\vect{v}],
+\end{equation}
+where $\vect{v}$ is a random vector with $\E[\vect{v}\vect{v}^\top] = \mat{I}$. An example of a viable choice for $\vect{v}$ is a vector of independent Rademacher random variables, where each $v_i$ takes values $\pm 1$ with probability $1/2$. The trace estimate is calculated by drawing $m$ such random vectors and averaging to get an unbiased estimate of the expectation:
+\begin{equation}
+    \widehat{\tr}[\mat{M}] = \frac{1}{m}\sum_{j=1}^m \vect{v}_j^\top\mat{M}\vect{v}_j.
+\end{equation}
+
+In our case, $\mat{M} = (\Ay^{-1}\mat{G})^2$. We do not need to form the full $\mat{M}$ explicitly to compute each $\vect{v}_j^\top\mat{M}\vect{v}_j$. Instead, we can apply the following approach: first compute $\vect{p}_1 = \mat{G}\vect{v}_j$ and solve $\Ay\vect{w}_1 = \vect{p}_1$ to get $\vect{w}_1 = \Ay^{-1}\mat{G}\vect{v}_j$. Then, compute $\vect{p}_2 = \mat{G}\vect{w}_1$ and similarly solve $\Ay\vect{w}_2 = \vect{p}_2$ to obtain $\vect{w}_2 = (\Ay^{-1}\mat{G})^2\vect{v}_j$. We then form $\vect{v}_j^\top\vect{w}_2$ as the contribution to the estimator.
+
+In this approach, $\Ay$ does not depend on the probe vector. We can thus compute its LU factorisation only once, at $O(n^3)$ cost, and reuse it across all the probe vectors. After doing this, each of the two linear solves required costs $O(n^2)$, giving a total cost of $O(n^3 + mn^2)$. Since we already need the LU factorisation of $\Ay$ to evaluate the log-determinant in the likelihood, the marginal cost of the trace estimate is only $O(mn^2)$.
+
+\section{Simultaneous FIML (Chapter~\ref{chap:simultaneous})}
+\label{app:code:fiml}
+For the fixed-point iteration in Section~\ref{sec:simul:como_challenge}, we use the tolerance $\delta = 10^{-6}$. We also implement a cap of $200$ iterations, but this was never reached, as all replications converged in nine or ten iterations.
+
+We apply the Schur-complement identity of Lemma~\ref{lem:det_identity}, $\det(\mat{J}) = \det(\Ay\As - \beta_2\mat{\Gamma})$, to the expensive Jacobian log-determinant term in the concentrated likelihood. This avoids computing the dense $2n \times 2n$ Jacobian. Instead, we use the sparse $\mat{G}$, $\mat{D}$, and $\mat{I}$ to assemble the $n \times n$ matrix $\Ay\As - \beta_2\mat{\Gamma}$ and obtain its log-determinant through a sparse LU factorisation (using \texttt{scipy.sparse.linalg.splu}). This reduces the computational cost significantly and allows us to run $R = 1{,}000$ Monte Carlo replications on a laptop.
+
+When maximising the five-dimensional concentrated likelihood using L-BFGS-B, we apply the parameter constraints
+\[
+    \beta_1 \in [-0.98,\, 0.98],\quad
+    \beta_2 \in [-2,\, 2],\quad
+    \gamma_1, \gamma_2 \in [-5,\, 5],\quad
+    \gamma_3 \in [-0.98,\, 0.98],
+\]
+along with the options \texttt{maxiter = 250} and \texttt{ftol = 1e-8}. For $\beta_1$ and $\gamma_3$, this ensures that we are within the open stability region $(-1, 1)$ and keeps the model invertible. The bounds on $\beta_2$, $\gamma_1$, and $\gamma_2$ are meant to be wide, and never actually clip in our simulations. We start the optimisation using the warm-start vector $(\hat{\beta}_1^{\text{rec}},\, 0,\, \hat{\gamma}_1^{\text{rec}},\, \hat{\gamma}_2^{\text{rec}},\, \hat{\gamma}_3^{\text{rec}})$, in which the four recursive estimates are computed on the same simulated dataset and $\beta_2$ is initialised as zero. Before starting, we clip this vector so that it lies at least $10^{-4}$ inside the parameter constraints, to avoid starting the search on the boundary. In our implementation, we include a fallback to Nelder--Mead optimisation with \texttt{maxiter = 2000} and \texttt{xatol = fatol = 1e-8}, should the L-BFGS-B search fail to converge. However, this did not happen in any of the $R = 1{,}000$ Monte Carlo replications.
+
+As with the recursive CoMO model, the remaining four parameters are calculated analytically using the results of Section~\ref{sec:simul:jacobian} once the optimisation has produced estimates. To calculate the numerical Hessian of the nine-parameter unconcentrated log-likelihood, we use the four-point central-difference formula of Section~\ref{sec:simul:standard_errors} with step size $h = 10^{-5}$. We use the unconcentrated log-likelihood so that the standard errors for all nine parameters can be found directly from the inverse Hessian.
+
+The Monte Carlo simulations of Sections~\ref{sec:simul:mc_results},~\ref{sec:simul:mc_bias}, and~\ref{sec:simul:wald_test} use the same seeding scheme as the recursive simulations. For the main study, the bias-from-misspecification study, and the Wald-size study, the outer seeds are $42$, $1{,}042$, and $2{,}042$, respectively. The Wald power study does not have a separate seed, as it reuses the main study.
+
+\section{Hessian Verification}
+\label{app:code:hessian}
+This section validates the derivations of the full analytical Hessians of Chapter~\ref{chap:estimation} by comparing their values to the four-point central-difference approximation introduced in the same chapter. We include this verification as the derivations and implementation are somewhat intricate. The numerical approximation uses a step size of $h = 10^{-5}$ and is evaluated at the MLE on a single generated dataset. The non-linear CoMO term $\vect{c} = \max(\vect{0}, \mat{G}\vect{s} - \vect{s})$ is fixed conditional on $\vect{s}$ and thus does not affect the Hessian, as the log-likelihood is smooth in its parameters given $\vect{c}$.
+
+We report the comparison for the WB equation in Table~\ref{tab:hessian_check_wb}, and for the SMU equation in Table~\ref{tab:hessian_check_smu}. These values are the elements of the observed information matrices $-\mat{H}^y$ and $-\mat{H}^s$ (the negative Hessians). The tables show that all elements agree within a relative error of $10^{-4}$. This provides strong evidence that both the analytical derivations and the implementation are correct. Some elements in the tables are marked with the $\dagger$ sign. These are theoretically zero at the MLE because the first-order conditions for the linear parameters imply $\vect{1}^\top\hat{\vect{\varepsilon}} = \vect{s}^\top\hat{\vect{\varepsilon}} = \vect{c}^\top\hat{\vect{\varepsilon}} = 0$. As a result, their absolute values are on the order of $10^{-10}$, which makes their relative errors erratic and meaningless.
+
+\begin{table}[htbp]
+\centering
+\caption[Analytical vs.\ numerical Hessian for the WB equation]{Elements of the observed information matrix $-\mat{H}^y$. Analytical vs.\ numerical Hessian for the WB equation ($n = 500$).}
+\label{tab:hessian_check_wb}
+\begin{tabular}{lccc}
+\toprule
+$(i,j)$ & Analytical & Numerical & Rel.\ Error \\
+\midrule
+$(\gamma_0,\, \gamma_0)$ & 526.33 & 526.33 & $< 10^{-4}$ \\
+$(\gamma_0,\, \gamma_1)$ & 1{,}999.76 & 1{,}999.76 & $< 10^{-4}$ \\
+$(\gamma_0,\, \gamma_2)$ & 245.18 & 245.18 & $< 10^{-4}$ \\
+$(\gamma_0,\, \gamma_3)$ & 3{,}294.14 & 3{,}294.14 & $< 10^{-4}$ \\
+$(\gamma_0,\, \sigma_\varepsilon^2)$ & $\approx 0$ & $\approx 0$ & $\dagger$ \\
+$(\gamma_1,\, \gamma_1)$ & 8{,}442.12 & 8{,}442.12 & $< 10^{-4}$ \\
+$(\gamma_1,\, \gamma_2)$ & 610.39 & 610.39 & $< 10^{-4}$ \\
+$(\gamma_1,\, \gamma_3)$ & 12{,}419.54 & 12{,}419.54 & $< 10^{-4}$ \\
+$(\gamma_1,\, \sigma_\varepsilon^2)$ & $\approx 0$ & $\approx 0$ & $\dagger$ \\
+$(\gamma_2,\, \gamma_2)$ & 347.96 & 347.96 & $< 10^{-4}$ \\
+$(\gamma_2,\, \gamma_3)$ & 1{,}537.35 & 1{,}537.35 & $< 10^{-4}$ \\
+$(\gamma_2,\, \sigma_\varepsilon^2)$ & $\approx 0$ & $\approx 0$ & $\dagger$ \\
+$(\gamma_3,\, \gamma_3)$ & 20{,}915.03 & 20{,}915.03 & $< 10^{-4}$ \\
+$(\gamma_3,\, \sigma_\varepsilon^2)$ & 32.71 & 32.71 & $< 10^{-4}$ \\
+$(\sigma_\varepsilon^2,\, \sigma_\varepsilon^2)$ & 277.02 & 277.02 & $< 10^{-4}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption[Analytical vs.\ numerical Hessian for the SMU equation]{Elements of the observed information matrix $-\mat{H}^s$. Analytical vs.\ numerical Hessian for the SMU equation ($n = 500$).}
+\label{tab:hessian_check_smu}
+\begin{tabular}{lccc}
+\toprule
+$(i,j)$ & Analytical & Numerical & Rel.\ Error \\
+\midrule
+$(\beta_0,\, \beta_0)$ & 349.91 & 349.91 & $< 10^{-4}$ \\
+$(\beta_0,\, \beta_1)$ & 1{,}319.99 & 1{,}319.99 & $< 10^{-4}$ \\
+$(\beta_0,\, \sigma_u^2)$ & $\approx 0$ & $\approx 0$ & $\dagger$ \\
+$(\beta_1,\, \beta_1)$ & 5{,}255.14 & 5{,}255.14 & $< 10^{-4}$ \\
+$(\beta_1,\, \sigma_u^2)$ & 30.93 & 30.93 & $< 10^{-4}$ \\
+$(\sigma_u^2,\, \sigma_u^2)$ & 122.44 & 122.44 & $< 10^{-4}$ \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,83 @@
+{
+    // LaTeX Workshop Settings for UiO Master Thesis
+    // Set the main file
+    "latex-workshop.latex.rootFile.dotsearch": false,
+    "latex-workshop.latex.rootFile.useSubFile": false,
+    // Build recipe configuration
+    "latex-workshop.latex.recipes": [
+        {
+            "name": "pdflatex -> biber -> pdflatex *2",
+            "tools": [
+                "pdflatex",
+                "biber",
+                "pdflatex",
+                "pdflatex"
+            ]
+        },
+        {
+            "name": "pdflatex",
+            "tools": [
+                "pdflatex"
+            ]
+        }
+    ],
+    // Tool definitions
+    "latex-workshop.latex.tools": [
+        {
+            "name": "pdflatex",
+            "command": "pdflatex",
+            "args": [
+                "-synctex=1",
+                "-interaction=nonstopmode",
+                "-file-line-error",
+                "%DOC%"
+            ],
+            "env": {}
+        },
+        {
+            "name": "biber",
+            "command": "biber",
+            "args": [
+                "%DOCFILE%"
+            ],
+            "env": {}
+        }
+    ],
+    // Auto-build on save
+    "latex-workshop.latex.autoBuild.run": "onSave",
+    // Clean auxiliary files
+    "latex-workshop.latex.clean.fileTypes": [
+        "*.aux",
+        "*.bbl",
+        "*.bcf",
+        "*.blg",
+        "*.idx",
+        "*.ind",
+        "*.lof",
+        "*.lot",
+        "*.out",
+        "*.toc",
+        "*.acn",
+        "*.acr",
+        "*.alg",
+        "*.glg",
+        "*.glo",
+        "*.gls",
+        "*.fls",
+        "*.log",
+        "*.fdb_latexmk",
+        "*.snm",
+        "*.synctex(busy)",
+        "*.synctex.gz",
+        "*.nav",
+        "*.vrb",
+        "*.run.xml"
+    ],
+    // PDF viewer settings
+    "latex-workshop.view.pdf.viewer": "tab",
+    // Error lens settings
+    "latex-workshop.message.error.show": true,
+    "latex-workshop.message.warning.show": true,
+    // Spell checker: use British English (thesis convention)
+    "cSpell.language": "en,en-GB"
+}
